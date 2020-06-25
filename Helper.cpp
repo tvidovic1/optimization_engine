@@ -8,7 +8,7 @@
 int findIndex(std::vector<int> values, int value)
 {
 
-    int index = 0;
+    int index = -1;
 
     for (int i = 0; i < values.size(); i++)
     {
@@ -23,61 +23,102 @@ int findIndex(std::vector<int> values, int value)
 
 long long int findGreatestCommonDivisor(long long int a, long long int b)
 {
-
+    // GCD found
 	if (b == 0) return a;
 
+    // GCD not found repeat for a mod b
 	return findGreatestCommonDivisor(b, a % b);
+}
+
+
+long long int findGreatestCommonDivisorOfVector(std::vector<long long int> inputs)
+{
+
+    // check if inputs is empty
+    if (inputs.size() == 0)
+    {
+        throw std::invalid_argument("The input vector is empty!");
+    }
+
+    long long int result = inputs.at(0);
+    for (int i = 1; i < inputs.size(); i++)
+    {
+        result = findGreatestCommonDivisor(inputs.at(i), result);
+
+        if (result == 1)
+        {
+            return 1;
+        }
+    }
+    return result;
 }
 
 long long int findLeastCommonMultiple(std::vector<long long int> inputs)
 {
-	// TODO: add try catch
-	long long int LCM = inputs.at(0);
+    
+	// check if inputs is empty
+    if (inputs.size() == 0)
+    {
+        throw std::invalid_argument("The input vector is empty!");
+    }
+
+    //get the GCD of the array
+    long long int GCD = findGreatestCommonDivisorOfVector(inputs);
+
+    // array can now safely be divided by GCD to reduce operand size
+    for (int i = 0; i < inputs.size(); i++)
+    {
+        inputs.at(i) = inputs.at(i) / GCD;
+    }
+
+    long long int LCM = inputs.at(0);
 
     //std::cout << "na 0: " << LCM << std::endl;
 	for (int i = 1; i < inputs.size(); i++)
 	{
-
+        if (findGreatestCommonDivisor(inputs.at(i), LCM) == 0)
+        {
+            throw std::domain_error("Division by zero");
+        }
 		LCM = (((inputs.at(i) * LCM)) / (findGreatestCommonDivisor(inputs.at(i), LCM)));
       
 	}
 
-	return LCM;
+    // multiply with GCD again
+	return LCM * GCD;
 }
 
 int getFirstDigit(int number)
 {
-    if (number < 10) return 0;
+    if (number >= 0 && number < 1000) return 0;
 
-    if (number >= 10 && number < 100) return 0;
-
-    else return number / 100;
+    else return number / 1000;
 
 }
 
 int getSecondDigit(int number)
 {
 
-    if (number < 10) return 0;
-
-    if (number >= 10 && number < 100) return number / 10;
-
+    if (number >= 0 && number < 100) return 0;
     else
     {
-        return (number - (number / 100) * 100) / 10;
+        return (number - getFirstDigit(number) * 1000) / 100;
     }
 }
 
 int getThirdDigit(int number)
 {
+    if (number < 10) return 0;
+
+    else return (number - getFirstDigit(number) * 1000 - getSecondDigit(number)*100 ) / 10;
+
+}
+
+int getFourthDigit(int number)
+{
     if (number < 10) return number;
 
-    if (number >= 10 && number < 100)
-    {
-        return (number - (number / 10) * 10);
-    }
-
-    else return (number % 100) % 10;
+    else return (number - getFirstDigit(number) * 1000 - getSecondDigit(number) * 100 - getThirdDigit(number) * 10) / 1;
 
 }
 
@@ -165,6 +206,8 @@ std::vector<std::vector<double> > repmat(std::vector<std::vector<double> > mat, 
 
 std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
 {
+
+    // documentation available online at: https://se.mathworks.com/matlabcentral/fileexchange/9700-random-vectors-with-fixed-sum
     double a = 0;
 
     double b = 1;
@@ -179,19 +222,13 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
 
     u = (u - n * a) / (b - a);
 
-    //std::cout << "u = " << u << std::endl;
-
     // Construct the transition probability table t
     // t[i][j] will be utilized only in the region where j<= i+1
 
     double k = std::max(std::min(std::floor(u), n - 1), 0.);
 
-    //std::cout << "k = " << u << std::endl;
 
     u = std::max(std::min(u, k + 1), k);
-
-    //std::cout << "u = " << u << std::endl;
-
     
     std::vector<double> u1;
 
@@ -202,20 +239,10 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         u1.push_back(u - (double) i);
     }
 
-    //std::cout << "s1 = ";
-
-    //showVector(u1);
-
     for (int i = k + n; i >= k + 1; i--)
     {
         u2.push_back((double)i - u);
     }
-
-
-    //std::cout << "s1 = ";
-
-    //showVector(u2);
-
     
     std::vector<std::vector<double>> w;
 
@@ -232,10 +259,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
 
     w[0][1] = std::numeric_limits<double>::max();
 
-    //std::cout << "w: " << std::endl;
-
-    //showMatrix(w);
-
 
     std::vector<std::vector<double>> t;
 
@@ -250,12 +273,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
             t.at(i).push_back(0.);
         }
     }
-
-
-    //std::cout << "t: " << std::endl;
-
-    //showMatrix(t);
-
 
     
     for (int i = 1; i < n; i++)
@@ -278,19 +295,11 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
             u1Help1.push_back(u1[k]);
         }
 
-        //std::cout << "w_help1: ";
-        //showVector(wHelp1);
-
-        //std::cout << "u1_help1: ";
-        //showVector(u1Help1);
-
         for (int l = 0; l < wHelp1.size(); l++)
         {
             tmp1.push_back((wHelp1[l] * u1Help1[l])/(i+1));
         }
 
-        //std::cout << "tmp1: ";
-        //showVector(tmp1);
 
         std::vector<double> wHelp2;
         std::vector<double> u2Help1;
@@ -305,19 +314,12 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
             u2Help1.push_back(u2[k]);
         }
 
-        //std::cout << "w_help2: ";
-        //showVector(wHelp2);
-
-        //std::cout << "u2_help1: ";
-        //showVector(u2Help1);
 
         for (int l = 0; l < wHelp2.size(); l++)
         {
             tmp2.push_back((wHelp2[l] * u2Help1[l]) / (i + 1));
         }
 
-        //std::cout << "tmp2: ";
-        //showVector(tmp2);
 
         // tmp3
         for (int l = 1; l <= i + 1; l++)
@@ -326,39 +328,22 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
             tmp3.push_back(w[i][l] + DBL_TRUE_MIN);
         }
 
-        //std::cout << "w: ";
-        //showMatrix(w);
-
-        //std::cout << "tmp3: ";
-        //showVector(tmp3);
-
         //tmp4
-
-        //std::cout << "tmp4: ";
 
         for (int j = 0; j < u1Help1.size(); j++)
         {
             tmp4.push_back(u2Help1[j] > u1Help1[j]);
-            //std::cout << tmp4[j];
         }
 
-        //std::cout << std::endl;
-
-        // t
 
         for (int j = 0; j <= i; j++)
         {
             t[i - 1][j] = (tmp2[j] / tmp3[j]) * tmp4[j] + (1 - tmp1[j] / tmp3[j]) * (1 - tmp4[j]);
         }
 
-        //std::cout << "t: ";
-        //showMatrix(t);
-
     }
 
     double v = std::pow(n, 3. / 2) * (w[(n - 1)][k + 1] / std::numeric_limits<double>::max()) * std::pow(b - a, n - 1);
-
-    //std::cout << "v: " << v << std::endl;
 
     // Now generate x:
 
@@ -376,9 +361,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
 
         }
     }
-
-    //std::cout << "x: ";
-    //showMatrix(x);
 
     if (m == 0) return x; // if 0 simplexes are wanted return immediately
 
@@ -403,9 +385,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         }
     }
 
-    //std::cout << "rt: ";
-    //showMatrix(rt);
-
     // For random selection of location in one simplex
 
     std::vector<std::vector<double> > rs;
@@ -425,9 +404,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         }
     }
 
-    //std::cout << "rs: ";
-    //showMatrix(rs);
-
     std::vector <std::vector<double>> s; 
 
     std::vector<double> newPartOfS;
@@ -438,15 +414,9 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
 
     s = repmat(s, 1, m);
 
-    //std::cout << "s: ";
-    //showMatrix(s);
-
     std::vector <std::vector<double>> j = { {k} };
 
     j = repmat( j, 1, m); // For indexing in t table
-
-    //std::cout << "j: ";
-    //showMatrix(j);
 
     // Initial sum is 0
 
@@ -465,9 +435,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         }
     }
 
-    //std::cout << "sum: ";
-    //showMatrix(sum);
-
     // Initial product is 1
 
     std::vector<std::vector<double> > product;
@@ -485,12 +452,7 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         }
     }
 
-    //std::cout << "product: ";
-    //showMatrix(product);
-
     // work backwards through the t table
-
-    //std::cout << "j size: " << j.at(0).at(0) << std::endl;
 
     for (int i = n - 2; i >= 0; i--)
     {
@@ -500,10 +462,7 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         {
             e.push_back( rt.at(n - i - 2).at(rtIndex) <= t.at(i).at(j.at(0).at(rtIndex)) );
 
-            //std::cout << e[rtIndex] << " ";
         }
-
-        //std::cout << std::endl;
 
         // use rs to compute next simplex coordinate
         std::vector<double> sx;
@@ -513,18 +472,12 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
             sx.push_back(pow(rs.at(n - i - 2).at(rtIndex), 1. / (i + 1)));
         }
 
-        //std::cout << "sx: ";
-        //showVector(sx);
-
         // update sum
 
         for (int rtIndex = 0; rtIndex < rt.at(n - i - 2).size(); rtIndex++)
         {
             sum.at(0).at(rtIndex) = sum.at(0).at(rtIndex) + (1 - sx.at(rtIndex)) * product.at(0).at(rtIndex) * s.at(0).at(rtIndex) / (i + 2);
         }
-
-        //std::cout << "sum: ";
-        //showMatrix(sum);
 
         // update product
 
@@ -533,18 +486,12 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
             product.at(0).at(rtIndex) = sx.at(rtIndex) * product.at(0).at(rtIndex);
         }
 
-        //std::cout << "product: ";
-        //showMatrix(product);
-
         // calculate x using simplex coordinates
 
         for (int xIndex = 0; xIndex < x.at(n - i - 2).size(); xIndex++)
         {
             x.at(n - i - 2).at(xIndex) = sum.at(0).at(xIndex) + product.at(0).at(xIndex) * e.at(xIndex);
         }
-        
-        //std::cout << "x: ";
-        //showMatrix(x);
 
         //Transition adjustment
 
@@ -557,12 +504,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
                 j.at(sAndERowIndex).at(sAndEColumnIndex) = j.at(sAndERowIndex).at(sAndEColumnIndex) - e.at(sAndEColumnIndex);
             }
         }
-
-        //std::cout << "s: ";
-        //showMatrix(s);
-
-        //std::cout << "j: ";
-        //showMatrix(j);
     }
 
 
@@ -572,9 +513,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
     {
         x.at(n - 1).at(xIndex) = sum.at(0).at(xIndex) + product.at(0).at(xIndex) * s.at(0).at(xIndex);
     }
-
-    //std::cout << "x: ";
-    //showMatrix(x);
 
     //Transpose x:
 
@@ -590,10 +528,6 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
         }
     }
 
-    //std::cout << "x': " << std::endl;
-
-    //showMatrix(xTransposed);
-
     // Randomly permute the order in the columns of x and rescale:
 
     //shuffle the first row
@@ -604,68 +538,26 @@ std::vector<std::vector<double>> generateTaskUtilization(double n, double u)
     {
         std::random_shuffle(xTransposed.at(xSize).begin(), xTransposed.at(xSize).end());
 
-        //showMatrix(xTransposed);
-
     }
-
-    //std::cout << "Final x: " << std::endl;
-
-    //showMatrix(xTransposed);
 
     return xTransposed;
 
 }
 
 
-/*
-std::vector<double> generateTaskUtilization(int n, double u)
-{
-    std::vector<double> taskUtilization;
-
-    double sum = 0.0;
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> distribution(0., 1.);
-
-    
-    for (int i = 0; i < n; i++)
-    {
-        double number = distribution(gen);
-
-        std::cout << "random number: " << number << std::endl << std::endl;
-
-        taskUtilization.push_back(1. - number);
-        taskUtilization[i] = -1 * std::log(taskUtilization[i]);
-
-        std::cout << "task utilization: " << taskUtilization[i] << std::endl << std::endl;
-
-        sum += taskUtilization[i];
-
-        std::cout << "sum: " << sum << std::endl << std::endl;
-
-
-    }
-
-    for (int i = 0; i < n; i++)
-    {
-        taskUtilization[i] /= sum;
-    }
-
-    
-
-    return taskUtilization;
-}
-
-*/
-
-
 int roulleteWheelSelecetion(std::vector<double> probabilities)
 {
-    // TO DO: try catch za prazan vector
+    // check if input is empty
+    if (probabilities.size() == 0)
+    {
+        throw std::invalid_argument("The input vector is empty!");
+    }
 
+    // starting value
     double totalSumOfProbabilities = 0.0;
 
+
+    // update total sum
     for (int i = 0; i < probabilities.size(); i++)
     {
         totalSumOfProbabilities += probabilities[i];
@@ -675,7 +567,8 @@ int roulleteWheelSelecetion(std::vector<double> probabilities)
     double sum = probabilities[0];
     int index = 0;
 
-    //std::cout << "TU SMO" << probabilities[index];
+
+    // generate a random number in range [0, totalSumOfProbailities]
     std::random_device rd;
 
     std::mt19937 gen(rd());
@@ -684,14 +577,13 @@ int roulleteWheelSelecetion(std::vector<double> probabilities)
 
     double number = distribution(gen);
 
+
+    // return the index of where on the roulette wheel it landed
     while (sum < number)
     {
         index += 1;
 
         sum += probabilities[index];
-
-        //std::cout << "TU SMO" << index  << probabilities[index];
-
         
     }
 
@@ -704,7 +596,7 @@ bool setsIntersect(std::set<int> a, std::set<int> b)
     set_intersection(a.begin(), a.end(), b.begin(), b.end(),
         std::back_inserter(common_data));
 
-    if (common_data.size() == 0) return false;
+    if (common_data.size() == 0) return false; // no data in set intersection, return false
     else return true;
 }
 
@@ -720,6 +612,7 @@ bool canCommunicate(TaskInstance producer, TaskInstance consumer)
 
     long long int endOfConsumerDataRadInterval = consumer.getAbsoluteDeadline() - consumer.getTask().getWorstCaseExecutionTime();
 
+    // If the DataWrite and DataRead Intervals overlap the two instances can potentially communicate
     return intervalsOverlap(startOfProducerDataWriteInterval, endOfProducerDataWriteInterval, startOfConsumerDataReadInterval, endOfConsumerDataRadInterval);
 
 }

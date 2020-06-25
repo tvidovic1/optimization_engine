@@ -9,47 +9,54 @@ void initializeEnviroment(void)
 char* createIntervalVariableName(int taskID, int numberOfInstance, char phase)
 {
     // The default name of interval variable: tau taskID instanceNumber phaseIdentifier
-    char defaultIntervalVariableName[14] = "tau 000 000 X";
+    char defaultIntervalVariableName[16] = "tau 0000 0000 X";
 
-    char intervalVariableName[14];
+    char intervalVariableName[16];
     strcpy_s(intervalVariableName, defaultIntervalVariableName);
 
     // Set taskID
     intervalVariableName[4] = getFirstDigit(taskID) + '0';
     intervalVariableName[5] = getSecondDigit(taskID) + '0';
     intervalVariableName[6] = getThirdDigit(taskID) + '0';
+    intervalVariableName[7] = getFourthDigit(taskID) + '0';
+
 
     // Set instanceNumber
-    intervalVariableName[8] = getFirstDigit(numberOfInstance) + '0';
-    intervalVariableName[9] = getSecondDigit(numberOfInstance) + '0';
-    intervalVariableName[10] = getThirdDigit(numberOfInstance) + '0';
+    intervalVariableName[9] = getFirstDigit(numberOfInstance) + '0';
+    intervalVariableName[10] = getSecondDigit(numberOfInstance) + '0';
+    intervalVariableName[11] = getThirdDigit(numberOfInstance) + '0';
+    intervalVariableName[12] = getFourthDigit(numberOfInstance) + '0';
+
 
     // Set phase identifier
-    intervalVariableName[12] = phase;
+    intervalVariableName[14] = phase;
 
 
     return intervalVariableName;
 }
 
-double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain> taskChains, int numberOfSolutions, std::string logFile, int & status,int maximumInterCoreDelay, bool minimizeResponseTimes)
+double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain> taskChains, int numberOfSolutions, std::string logFile, int & status, int & numberOfConstraints, int timeLimit, int maximumInterCoreDelay, bool minimizeResponseTimes)
 {
     
     long long int hyperPeriod = 0;
 
-    // The common hyperperiod needs to be considered
     if (taskSets.at(0).getHyperperiod() != 0 && taskSets.at(1).getHyperperiod() != 0)
     {
+        // The hyperperiods of individual task sets
         std::vector<long long int> hyperperiodsOfTaskSets;
-        hyperperiodsOfTaskSets.push_back(taskSets.at(0).getHyperperiod() / 1000000);
-        hyperperiodsOfTaskSets.push_back(taskSets.at(1).getHyperperiod() / 1000000);
-        hyperPeriod = findLeastCommonMultiple(hyperperiodsOfTaskSets) * 1000000;
-        //std::cout << "hyper: " << hyperPeriod << std::endl;
+
+        hyperperiodsOfTaskSets.push_back(taskSets.at(0).getHyperperiod());
+        hyperperiodsOfTaskSets.push_back(taskSets.at(1).getHyperperiod());
+
+        // The common hyperperiod needs to be considered
+        hyperPeriod = findLeastCommonMultiple(hyperperiodsOfTaskSets);
         taskSets.at(0).setHyperperiod(hyperPeriod);
         taskSets.at(1).setHyperperiod(hyperPeriod);
     }
 
     // Show application being scheduled
 
+    // Show tasks on both cores
 
     for (int i = 0; i < taskSets.size(); i++)
     {
@@ -61,8 +68,11 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
         }
     }
 
-    std::cout << "Total hyperperiod: " << hyperPeriod/1000000000 << std::endl;
+    // Show Hyperperiod
+    std::cout << std::endl << "Total hyperperiod: " << hyperPeriod << std::endl << std::endl;
      
+    // Show Taskchains
+
     for ( int i = 0; i < taskChains.size(); i++)
     {
         std::cout << "Chain " << i << ": " << std::endl;
@@ -78,16 +88,13 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
     // The vector that holds the number of task instances for each of the cores
     std::vector<IloInt> numberInstancesCore;
     
-
     for (IloInt i = 0; i < NUMBER_OF_CORES; i++)
     {
-        
-        numberInstancesCore.push_back(taskSets.at(i).getInstances().size()); 
-
-        
+      
+        numberInstancesCore.push_back(taskSets.at(i).getInstances().size());
     }
     
-    //std::cout << "Na coru 0: " << numberInstancesCore[0] << " Na coru 1: " << numberInstancesCore[1] << std::endl;
+    // The Array of interval variables holding interval variables representing all the phases of all the instances
     IloIntervalVarArray allPhasesOfInstances(environment);
 
     // The vector that holds arrays of interval variables for each of the phases of each of the task instances for each of the cores
@@ -121,17 +128,14 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
     // The array that holds interval variables for all READ and WRITE phases
     IloIntervalVarArray ReadAndWriteInstaces(environment, totalNumberOfRWPhases);
 
+    // The variable that holds all helper H variables
     IloIntVarArray helper(environment);
-
-
-    //IloIntervalVarArray phasesOfInstancesOnAllCores(environment, (numberInstancesCore.at(0) + numberInstancesCore.at(1)) * NUMBER_OF_PHASES);
-
 
     // The variable that keeps track of the number of interval variables
     IloInt numberOfIntervalVar = 0;
 
-    IloIntVarArray consumerProducerPairVariablesForConsumerGlobal(environment);
-
+    // The array of Zi expressions
+    IloExprArray consumerProducerPairVariablesForConsumerGlobal(environment);
 
     // The variable that keeps track of the number of interval variables for all READ and WRITE phases
     IloInt numberOfReadAndWriteIntervalVar = 0;
@@ -149,7 +153,6 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
 
     }
 
-
     std::cout << "CREATING DEICISON INTERVAL VARIABLES FOR TASKS..." << std::endl << std::endl;
     for (IloInt core = 0; core < NUMBER_OF_CORES; core++)
     {
@@ -160,9 +163,11 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
 
             for (IloInt j = 0; j < NUMBER_OF_PHASES; j++)
             {
-                if (j == 0)
+                if (j == 0) // Create the interval variable representing the read phase
                 {
-                    //std::cout << "OVO STO SAD HOCU: " << currentInstance.getTask().getPeriod() * currentInstance.getNumberOfInstance() << std::endl;
+
+                    // The start and end point is presented in detail in the master thesis
+
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar] = IloIntervalVar(environment, 0, currentInstance.getTask().getPeriod() * currentInstance.getNumberOfInstance());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setName(createIntervalVariableName(currentInstance.getTask().getTaskId(), currentInstance.getNumberOfInstance(), 'R'));
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setPresent();
@@ -172,22 +177,12 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setEndMax(currentInstance.getAbsoluteDeadline() - (currentInstance.getTask().getWorstCaseExecute() + currentInstance.getTask().getWorstCaseWrite()));
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setLengthMin(currentInstance.getTask().getWorstCaseRead());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setLengthMax(currentInstance.getTask().getWorstCaseRead());
-
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setSizeMin(currentInstance.getTask().getWorstCaseRead());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setSizeMax(currentInstance.getTask().getWorstCaseRead());
 
+                    // add to appropriate arrays
                     ReadAndWriteInstaces[numberOfReadAndWriteIntervalVar] = phasesOfInstancesOnCore.at(core)[numberOfIntervalVar];
-
                     model.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
-
-
-                    std::cout << "R: " << phasesOfInstancesOnCore.at(core)[numberOfIntervalVar] << std::endl;
-                    //ReadAndWriteInstaces[numberOfReadAndWriteIntervalVar] = phasesOfInstancesOnCore.at(core)[numberOfIntervalVar];
-
-
-                    // Add the read instance to decision variables
-
-                    //phasesOfInstancesOnAllCores.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
                     allPhasesOfInstances.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
                     numberOfIntervalVar++;
                     numberOfReadAndWriteIntervalVar++;
@@ -198,8 +193,9 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
 
                 }
 
-                else if (j == 1)
+                else if (j == 1) // Create the interval variable representing the execute phase
                 {
+                    // The start and end point is presented in detail in the master thesis
 
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar] = IloIntervalVar(environment, 0, currentInstance.getTask().getPeriod() * currentInstance.getNumberOfInstance());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setName(createIntervalVariableName(currentInstance.getTask().getTaskId(), currentInstance.getNumberOfInstance(), 'E'));
@@ -210,28 +206,20 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setEndMax( currentInstance.getAbsoluteDeadline() - currentInstance.getTask().getWorstCaseWrite());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setLengthMin(currentInstance.getTask().getWorstCaseExecute());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setLengthMax(currentInstance.getTask().getWorstCaseExecute());
-
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setSizeMin(currentInstance.getTask().getWorstCaseExecute());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setSizeMax(currentInstance.getTask().getWorstCaseExecute());
 
-                    // Constraints ordering interval variables that correspond to READ and EXECUTE phases
-                    // Nonpreemptive scheduler, all phases of instance must be executed in order
-                    std::cout << "E: " << phasesOfInstancesOnCore.at(core)[numberOfIntervalVar] << std::endl;
-
-
+                    // add to appropriate arrays
                     model.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
-
-   
-
-                    //phasesOfInstancesOnAllCores.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
                     allPhasesOfInstances.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
 
 
                     numberOfIntervalVar++;
                 }
 
-                else
+                else // Create the interval variable representing the write phase
                 {
+                    // The start and end point is presented in detail in the master thesis
 
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar] = IloIntervalVar(environment, 0, currentInstance.getTask().getPeriod() * currentInstance.getNumberOfInstance() );
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setName(createIntervalVariableName(currentInstance.getTask().getTaskId(), currentInstance.getNumberOfInstance(), 'W'));
@@ -242,16 +230,21 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setEndMax(currentInstance.getAbsoluteDeadline());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setLengthMin(currentInstance.getTask().getWorstCaseWrite());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setLengthMax(currentInstance.getTask().getWorstCaseWrite());
-
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setSizeMin(currentInstance.getTask().getWorstCaseWrite());
                     phasesOfInstancesOnCore.at(core)[numberOfIntervalVar].setSizeMax(currentInstance.getTask().getWorstCaseWrite());
 
-                    // Constraints ordering interval variables that correspond to EXECUTE and WRITE phases
-                    // Nonpreemptive scheduler, all phases of instance must be executed in order
-                    //model.add(IloStartAtEnd(environment, phasesOfInstancesOnCore.at(core)[numberOfIntervalVar], phasesOfInstancesOnCore.at(core)[numberOfIntervalVar - 1], 0));
-
+                    // add to appropriate arrays
                     allPhasesOfInstances.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
 
+                    ReadAndWriteInstaces[numberOfReadAndWriteIntervalVar] = phasesOfInstancesOnCore.at(core)[numberOfIntervalVar];
+
+                    model.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
+
+                    numberOfReadAndWriteIntervalVar++;
+
+                    numberOfIntervalVar++;
+
+                    // If the response time minimization flag is set, create R variables
                     if (minimizeResponseTimes)
                     {
                         responseTimeDecisionVariables.add(IloEndOf(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]) - currentInstance.getAbsoluteReleaseTime());
@@ -260,19 +253,6 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                         model.add(responseTimeDecisionVariables[responseTimeDecisionVariables.getSize() - 1] <= currentInstance.getTask().getPeriod());
                     }
 
-
-                    std::cout << "W: " << phasesOfInstancesOnCore.at(core)[numberOfIntervalVar] << std::endl;
-
-                    ReadAndWriteInstaces[numberOfReadAndWriteIntervalVar] = phasesOfInstancesOnCore.at(core)[numberOfIntervalVar];
-
-                    model.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
-
-                    numberOfReadAndWriteIntervalVar++;
-
-                    //phasesOfInstancesOnAllCores.add(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar]);
-
-
-                    numberOfIntervalVar++;
                 }
 
 
@@ -303,16 +283,16 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
             instanceVariable.setSizeMin(currentInstance.getTask().getWorstCaseExecutionTime());
             instanceVariable.setSizeMax(currentInstance.getTask().getPeriod());
 
-            std::cout << "Entire instance: " << instanceVariable;
             // The instance starts when the corresponding Read Phase starts
             model.add(IloStartOf(instanceVariable) == IloStartOf(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar - 3]));
+
             // The instance ends when the corresponding Write Phase ends
             model.add(IloEndOf(instanceVariable) == IloEndOf(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar - 1]));
 
-
-
+            // add to appropriate array
             instancesOnCore.at(core).add(instanceVariable);
 
+            // check to see if the instance is part of a chain
             bool isInAnyChain = false;
             for (int chain = 0; chain < taskChains.size(); chain++)
             {
@@ -323,6 +303,8 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                 }
             }
 
+            // Create the final instance of the same task in the previous hyperperiod
+            // The first instance of a consumer task in this hyperperiod can potentially communicate with the final instance in the previous hyperperiod
             if (i != numberInstancesCore.at(core) - 1)
             {
 
@@ -335,11 +317,14 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     {
                         IloIntervalVar extraInstance(environment);
 
-                        char name[20] = "extraInstanceTau000";
+                        char name[21] = "extraInstanceTau0000";
 
                         name[16] = getFirstDigit(currentInstance.getTask().getTaskId()) + '0';
                         name[17] = getSecondDigit(currentInstance.getTask().getTaskId()) + '0';
                         name[18] = getThirdDigit(currentInstance.getTask().getTaskId()) + '0';
+                        name[19] = getFourthDigit(currentInstance.getTask().getTaskId()) + '0';
+
+                        // The start and end point is presented in detail in the master thesis
 
                         extraInstance.setName(name);
                         extraInstance.setStartMin(-1 * taskSets.at(core).getHyperperiod());
@@ -353,9 +338,8 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                         extraInstance.setSizeMin(currentInstance.getTask().getWorstCaseWrite());
                         extraInstance.setSizeMax(currentInstance.getTask().getWorstCaseWrite());
 
-                        std::cout << "Extra Instance: " << extraInstance << std::endl;
+                        // add to appropriate arrays
                         extraWriteInstances.at(core).add(extraInstance);
-
 
                         model.add(IloStartOf(extraInstance) == IloStartOf(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar - 1]) - taskSets.at(core).getHyperperiod());
                     }
@@ -372,14 +356,17 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     IloIntervalVar extraInstance(environment);
 
 
-                    char name[20] = "extraInstanceTau000";
+                    char name[21] = "extraInstanceTau0000";
 
                     name[16] = getFirstDigit(currentInstance.getTask().getTaskId()) + '0';
                     name[17] = getSecondDigit(currentInstance.getTask().getTaskId()) + '0';
                     name[18] = getThirdDigit(currentInstance.getTask().getTaskId()) + '0';
+                    name[19] = getFourthDigit(currentInstance.getTask().getTaskId()) + '0';
+
+
+                    // The start and end point is presented in detail in the master thesis
 
                     extraInstance.setName(name);
-
                     extraInstance.setStartMin(-1 * taskSets.at(core).getHyperperiod());
                     extraInstance.setPresent();
                     extraInstance.setStartMin(currentInstance.getAbsoluteReleaseTime() + currentInstance.getTask().getWorstCaseRead() + taskSets.at(core).getInstances().at(i).getTask().getWorstCaseExecute() - taskSets.at(core).getHyperperiod());
@@ -390,11 +377,9 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     extraInstance.setLengthMax(currentInstance.getTask().getWorstCaseWrite());
                     extraInstance.setSizeMin(currentInstance.getTask().getWorstCaseWrite());
                     extraInstance.setSizeMax(currentInstance.getTask().getWorstCaseWrite());
-                    std::cout << "Extra Instance: " << extraInstance << std::endl;
 
+                    // add to appropriate arrays
                     extraWriteInstances.at(core).add(extraInstance);
-
-
 
                     model.add(IloStartOf(extraInstance) == IloStartOf(phasesOfInstancesOnCore.at(core)[numberOfIntervalVar - 1]) - taskSets.at(core).getHyperperiod());
                 }
@@ -409,8 +394,6 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
     for (IloInt i = 0; i < NUMBER_OF_CORES; i++)
     {
         model.add(IloNoOverlap(environment, instancesOnCore.at(i)));
-        model.add(IloNoOverlap(environment, phasesOfInstancesOnCore.at(i)));
-
     }
     
     // To avoid crossbar-switch contetion, interval variables that correspond to READ and WRITE phases on all cores should not overlap
@@ -418,6 +401,7 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
 
     // Generate new int decision variables zi for task chains and create constraints for them
 
+    // Inititate objective function
     IloExpr objectiveFunction(environment);
 
     std::cout << "CREATING INT DEICISON VARIABLES FOR TASK CHAINS..." << std::endl << std::endl;
@@ -426,9 +410,6 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
     {
         // Chain Hyperperiod
         long long int chainHyperPeriod = taskChains.at(chain).getHyperperiod();
-
-        //std::cout << "chain: " << chain << " chain hyper period: " << chainHyperPeriod << std::endl << std::endl;
-
 
         for (int consumerTaskIndex = 1; consumerTaskIndex < taskChains.at(chain).getTasks().size(); consumerTaskIndex++) // Loop through all of the tasks in the chain except for the first one (has no producers)
         {
@@ -448,24 +429,17 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
             int producerCoreAssignedTo = taskChains.at(chain).getTasks().at(producerTaskIndex).getCoreAssignedTo() - 1;
             long long int producerExecutionTime = taskChains.at(chain).getTasks().at(producerTaskIndex).getWorstCaseExecutionTime();
 
-            //std::cout << "producerCoreAssignedTo: " << producerCoreAssignedTo << std::endl;
-
-            //std::cout << "producerCoreAssignedTo: " << consumerCoreAssignedTo << std::endl;
-
             // Get all instances on producer's core
             std::vector<TaskInstance> instancesOnProducersCore = taskSets.at(producerCoreAssignedTo).getInstances();
 
             // Get all instances on consumer's core
             std::vector<TaskInstance> instancesOnConsumersCore = taskSets.at(consumerCoreAssignedTo).getInstances();
 
-
-
             for (int consumerInstanceIndex = 0; consumerInstanceIndex < instancesOnConsumersCore.size(); consumerInstanceIndex++) // Loop through all the instances on the consumer's core
             {
                 bool firstTime = true;
 
                 //Select only instances of the consumer
-                //std::cout << "consumerInstanceIndex: " << consumerInstanceIndex << std::endl;
                 TaskInstance currentInstanceOnConsumersCore = instancesOnConsumersCore.at(consumerInstanceIndex);
 
                 if (currentInstanceOnConsumersCore.getTask().getTaskId() == consumerTaskId)
@@ -477,16 +451,9 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     long long int startOfConsumer = (currentInstanceOnConsumersCore.getNumberOfInstance() - 1) * consumerTaskPeriod;
                     long long int endOfConsumer = (currentInstanceOnConsumersCore.getNumberOfInstance() - 1) * consumerTaskPeriod + consumerTaskPeriod;
 
-                    //std::cout << "Consumer: " << consumerTaskId << " [" << startOfConsumer << ", " << endOfConsumer << "]" << std::endl << std::endl;
-
-
                     // Create vector that holds all producer consumer communicating pairs for the current consumer
 
                     IloExprArray consumerProducerPairVariablesForConsumer(environment);
-
-                    // Create vector that holds helper variables
-
-
 
                     // Check if the interval of consumer overlaps with the interval of first instance of producer
                              
@@ -500,17 +467,12 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
 
                             // The right instance of producer is seletcted
 
-                            // TODO: check if this condition is fine
-                            //std::cout << "PRVI PUT: " << "a: " << 0 << " b: " << producerTaskPeriod << " c: " << startOfConsumer << " d: " << endOfConsumer << std::endl;
-
                             if (consumerCoreAssignedTo != producerCoreAssignedTo)
                             {
                                 if (intervalsOverlap(0, producerTaskPeriod - producerExecutionTime, startOfConsumer + consumerExecutionTime, endOfConsumer) && firstTime)
                                 {
                                     // The communication between the producer from the previous hyperperiod has been added already
                                     firstTime = false;
-
-                                    //IloIntVar producerConsumerPairFirst(environment, -hyperPeriod, hyperPeriod);
 
                                     int lastProducerInstanceIndex = producerInstanceIndex;
                                     while (instancesOnProducersCore.at(lastProducerInstanceIndex).getNumberOfInstance() * instancesOnProducersCore.at(lastProducerInstanceIndex).getTask().getPeriod() != taskSets.at(0).getHyperperiod())
@@ -521,19 +483,6 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                                     long long int startOfLastProducer = (instancesOnProducersCore.at(lastProducerInstanceIndex).getNumberOfInstance() - 1) * producerTaskPeriod;
                                     long long int endOfLastProducer = (instancesOnProducersCore.at(lastProducerInstanceIndex).getNumberOfInstance() - 1) * producerTaskPeriod + producerTaskPeriod;
 
-                                    // If the intervals overlap add an extra constraint for the producer instance in the previous hyperperiod
-                                    // TODO: chehck 10_4
-                                    //model.add(producerConsumerPairFirst == ( IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - ( IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * lastProducerInstanceIndex + 2]) - taskSets.at(0).getHyperperiod() ) ) );
-
-                                    //std::cout << "consumerProducer" << consumerProducerPairVariablesForConsumer.getSize() << " = " << std::endl << std::endl;
-
-                                    //std::cout << "Producer: " << producerTaskId << " [" << startOfLastProducer - taskSets.at(0).getHyperperiod() << ", " << endOfLastProducer - taskSets.at(0).getHyperperiod() << "]" << std::endl << std::endl;
-
-
-                                    /*consumerProducerPairVariablesForConsumer.add((IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - (IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * lastProducerInstanceIndex + 2]) - taskSets.at(0).getHyperperiod())));
-                                    model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] <= endOfConsumer - startOfLastProducer + taskSets.at(0).getHyperperiod() - producerExecutionTime);
-                                    model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] >= 0);
-                                    */
                                     int indexOfProducerTaskOnCore = 0;
 
                                     for (int k = 0; k < taskSets.at(producerCoreAssignedTo).getTasks().size(); k++)
@@ -544,71 +493,42 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                                         }
                                     }
 
-                                    //std::cout << "start of last producer: " << startOfLastProducer;
-                                    /*
-                                    IloIntVar consumerProducerPairVariable(environment, 0, (long long int)(endOfConsumer - consumerExecutionTime) - (startOfLastProducer + producerExecutionTime) + hyperPeriod);
 
-                                    char name[32] = "producer000_-000consumer000_000";
-
-                                    name[8] = getFirstDigit(producerTaskId) + '0';
-                                    name[9] = getSecondDigit(producerTaskId) + '0';
-                                    name[10] = getThirdDigit(producerTaskId) + '0';
-
-                                    name[13] = getFirstDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                    name[14] = getSecondDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                    name[15] = getThirdDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-
-                                    name[24] = getFirstDigit(consumerTaskId) + '0';
-                                    name[25] = getSecondDigit(consumerTaskId) + '0';
-                                    name[26] = getThirdDigit(consumerTaskId) + '0';
-
-                                    name[28] = getFirstDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                    name[29] = getSecondDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                    name[30] = getThirdDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-
-                                    consumerProducerPairVariable.setName(name);
-                                    */
+                                    // For the extra instances in the previous hyperperiod:
 
                                     int indexOfExtraInstance = 0;
 
                                     for (int indexOfExtraWriteInstance = 0; indexOfExtraWriteInstance < extraWriteInstances.at(producerCoreAssignedTo).getSize(); indexOfExtraWriteInstance++)
                                     {
 
-                                        char name[20] = "extraInstanceTau000";
+                                        // Create name for compariosn
+                                        char name[21] = "extraInstanceTau0000";
 
                                         name[16] = getFirstDigit(producerTaskId) + '0';
                                         name[17] = getSecondDigit(producerTaskId) + '0';
                                         name[18] = getThirdDigit(producerTaskId) + '0';
+                                        name[19] = getFourthDigit(producerTaskId) + '0';
+
                                         if (name == extraWriteInstances.at(producerCoreAssignedTo)[indexOfExtraWriteInstance].getName())
                                         {
                                             indexOfExtraInstance = indexOfExtraWriteInstance;
                                         }
                                     }
 
+                                    // Create Zi constraints as described in the master thesis
+
                                     IloExpr zi(environment);
 
-                                    zi = IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - (IloEndOf(extraWriteInstances.at(producerCoreAssignedTo)[indexOfExtraInstance]));
+                                    zi = IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[(long long int) NUMBER_OF_PHASES * consumerInstanceIndex]) - (IloEndOf(extraWriteInstances.at(producerCoreAssignedTo)[indexOfExtraInstance]));
 
                                     model.add(zi);
 
                                     consumerProducerPairVariablesForConsumer.add(zi);
 
-                                    //consumerProducerPairVariablesForConsumer.add(consumerProducerPairVariable);
-                                   
-                                    //std::cout << "CONSUMERPRODUCER" << (IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - (IloEndOf(extraWriteInstances.at(producerCoreAssignedTo)[indexOfProducerTaskOnCore]))) << std::endl;
-                                    //consumerProducerPairVariablesForConsumerGlobal.add(consumerProducerPairVariable);
-
-
-                                    //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] <= (endOfConsumer - consumerExecutionTime) - (startOfLastProducer + producerExecutionTime - hyperPeriod) );
-                                    //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] >= 0);
-
-                                    std::cout << zi << std::endl;
+                                    consumerProducerPairVariablesForConsumerGlobal.add(zi);
+                                
 
                                 }
-
-                                // New interval variable for communicating pairs-
-
-                                //IloIntVar producerConsumerPair(environment, -hyperPeriod, hyperPeriod);
 
                                // Check if the instance of the producer can communicate with the instance of the consumer
 
@@ -618,159 +538,21 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                                 if (canCommunicate(currentInstanceOnProducersCore, currentInstanceOnConsumersCore))
                                 {
                                     long long int lowerBound = startOfConsumer - endOfProducer;
-                                    //if (lowerBound > 0) lowerBound = 0;
-
-                                    /*
-                                    IloIntVar consumerProducerPairVariable(environment, lowerBound, endOfConsumer - startOfProducer - producerExecutionTime - consumerExecutionTime);
-
-                                    char name[31] = "producer000_000consumer000_000";
-
-                                    name[8] = getFirstDigit(producerTaskId) + '0';
-                                    name[9] = getSecondDigit(producerTaskId) + '0';
-                                    name[10] = getThirdDigit(producerTaskId) + '0';
-
-                                    name[12] = getFirstDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                    name[13] = getSecondDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                    name[14] = getThirdDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-
-                                    name[23] = getFirstDigit(consumerTaskId) + '0';
-                                    name[24] = getSecondDigit(consumerTaskId) + '0';
-                                    name[25] = getThirdDigit(consumerTaskId) + '0';
-
-                                    name[27] = getFirstDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                    name[28] = getSecondDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                    name[29] = getThirdDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-
-                                    consumerProducerPairVariable.setName(name);
-                                    */
+                                    
+                                    // Create Zi constraints as described in the master thesis
 
                                     IloExpr zi(environment);
 
-                                    zi = IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2]);
+                                    zi = IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[(long long int) NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[(long long int) NUMBER_OF_PHASES * producerInstanceIndex + 2]);
 
                                     model.add(zi);
 
                                     consumerProducerPairVariablesForConsumer.add(zi);
 
-                                    //consumerProducerPairVariablesForConsumerGlobal.add(consumerProducerPairVariable);
+                                    consumerProducerPairVariablesForConsumerGlobal.add(zi);
 
-                                    //consumerProducerPairVariablesForConsumer.add((IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2])));
-                                    //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] <= endOfConsumer - startOfProducer - producerExecutionTime - consumerExecutionTime);
-                                    //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] >= startOfConsumer  - endOfProducer);
-
-                                    //std::cout << "Producer-Consumer Pair" << producerConsumerPair << std::endl << std::endl;
-
-                                    std::cout << zi << std::endl;
                                 }
 
-                                /*
-                                //If producer comes before consumer
-                                if (startOfProducer <= startOfConsumer)
-                                {
-                                    std::cout << "a: " << startOfProducer + producerTaskPeriod - producerExecutionTime - consumerExecutionTime << " b: " << endOfProducer + producerTaskPeriod - producerExecutionTime - consumerExecutionTime << " c: " << startOfConsumer << " d: " << endOfConsumer << std::endl;
-                                    if (intervalsOverlap(startOfProducer - producerExecutionTime - consumerExecutionTime, endOfProducer + producerTaskPeriod - producerExecutionTime - consumerExecutionTime, startOfConsumer, endOfConsumer))
-                                    {
-
-
-                                        // If the intervals overlap the producer/consumer pair can communicate and Zi constraint is introduced
-                                        //model.add(producerConsumerPair == ( IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2]) ) );
-                                        //std::cout << "consumerProducer" << consumerProducerPairVariablesForConsumer.getSize() << " = " << std::endl << std::endl;
-
-                                        //std::cout << "Producer: " << producerTaskId << " [" << startOfProducer << ", " << endOfProducer << "]" << std::endl << std::endl;
-
-                                        long long int lowerBound = startOfConsumer - endOfProducer;
-                                        //if (lowerBound > 0) lowerBound = 0;
-
-                                        IloIntVar consumerProducerPairVariable(environment, lowerBound, endOfConsumer - startOfProducer - producerExecutionTime - consumerExecutionTime);
-
-                                        char name[31] = "producer000_000consumer000_000";
-
-                                        name[8] = getFirstDigit(producerTaskId) + '0';
-                                        name[9] = getSecondDigit(producerTaskId) + '0';
-                                        name[10] = getThirdDigit(producerTaskId) + '0';
-
-                                        name[12] = getFirstDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                        name[13] = getSecondDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                        name[14] = getThirdDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-
-                                        name[23] = getFirstDigit(consumerTaskId) + '0';
-                                        name[24] = getSecondDigit(consumerTaskId) + '0';
-                                        name[25] = getThirdDigit(consumerTaskId) + '0';
-
-                                        name[27] = getFirstDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                        name[28] = getSecondDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                        name[29] = getThirdDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-
-                                        consumerProducerPairVariable.setName(name);
-
-                                        model.add(consumerProducerPairVariable == (IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2])));
-                                        consumerProducerPairVariablesForConsumer.add(consumerProducerPairVariable);
-                                        consumerProducerPairVariablesForConsumerGlobal.add(consumerProducerPairVariable);
-
-                                        //consumerProducerPairVariablesForConsumer.add((IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2])));
-                                        //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] <= endOfConsumer - startOfProducer - producerExecutionTime - consumerExecutionTime);
-                                        //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] >= startOfConsumer  - endOfProducer);
-
-                                        //std::cout << "Producer-Consumer Pair" << producerConsumerPair << std::endl << std::endl;
-
-                                        std::cout << consumerProducerPairVariable << std::endl;
-
-                                    }
-                                }
-                                else // If producer starts after consumer
-                                {
-                                    if (intervalsOverlap(startOfProducer + producerExecutionTime, endOfProducer, startOfConsumer, endOfConsumer - consumerExecutionTime))
-                                    {
-
-                                        // If the intervals overlap the producer/consumer pair can communicate and Zi constraint is introduced
-                                        //model.add(producerConsumerPair == ( IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2]) ) );
-                                        //std::cout << "consumerProducer" << consumerProducerPairVariablesForConsumer.getSize() << " = " << std::endl << std::endl;
-
-                                        //std::cout << "Producer: " << producerTaskId << " [" << startOfProducer << ", " << endOfProducer << "]" << std::endl << std::endl;
-
-                                        long long int lowerBound = startOfConsumer - endOfProducer;
-                                        //if (lowerBound > 0) lowerBound = 0;
-                                        IloIntVar consumerProducerPairVariable(environment, lowerBound, endOfConsumer - startOfProducer - producerExecutionTime - consumerExecutionTime);
-
-                                        char name[31] = "producer000_000consumer000_000";
-                                        name[8] = getFirstDigit(producerTaskId) + '0';
-                                        name[9] = getSecondDigit(producerTaskId) + '0';
-                                        name[10] = getThirdDigit(producerTaskId) + '0';
-
-                                        name[12] = getFirstDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                        name[13] = getSecondDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-                                        name[14] = getThirdDigit(currentInstanceOnProducersCore.getNumberOfInstance()) + '0';
-
-                                        name[23] = getFirstDigit(consumerTaskId) + '0';
-                                        name[24] = getSecondDigit(consumerTaskId) + '0';
-                                        name[25] = getThirdDigit(consumerTaskId) + '0';
-
-                                        name[27] = getFirstDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                        name[28] = getSecondDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-                                        name[29] = getThirdDigit(currentInstanceOnConsumersCore.getNumberOfInstance()) + '0';
-
-                                        consumerProducerPairVariable.setName(name);
-
-                                        model.add(consumerProducerPairVariable == (IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2])));
-                                        consumerProducerPairVariablesForConsumer.add(consumerProducerPairVariable);
-                                        consumerProducerPairVariablesForConsumerGlobal.add(consumerProducerPairVariable);
-
-
-                                        //consumerProducerPairVariablesForConsumer.add((IloStartOf(phasesOfInstancesOnCore.at(consumerCoreAssignedTo)[NUMBER_OF_PHASES * consumerInstanceIndex]) - IloEndOf(phasesOfInstancesOnCore.at(producerCoreAssignedTo)[NUMBER_OF_PHASES * producerInstanceIndex + 2])));
-                                        //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] <= endOfConsumer - startOfProducer - producerExecutionTime - consumerExecutionTime);
-                                        //model.add(consumerProducerPairVariablesForConsumer[consumerProducerPairVariablesForConsumer.getSize() - 1] >= startOfConsumer - endOfProducer);
-
-                                        std::cout << consumerProducerPairVariable << std::endl;
-
-                                        //std::cout << "Producer-Consumer Pair" << producerConsumerPair << std::endl << std::endl;
-
-
-                                    }
-
-                                   
-                                }
-
-                                */
                             }
                             
                             
@@ -778,108 +560,49 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                         
                     }
                     
+                    // Create additional MinusOne helper variable to help with selection
                    IloExpr MinusOne(environment);
                    MinusOne += -1;
-                   //model.add(MinusOne == -1);
                    consumerProducerPairVariablesForConsumer.add(MinusOne);
-
-                   //std::cout << "IMA IH: " << consumerProducerPairVariablesForConsumer.getSize() << std::endl;
 
                     for (int consumerProducerPairIndex = 0; consumerProducerPairIndex < consumerProducerPairVariablesForConsumer.getSize() - 1; consumerProducerPairIndex++)
                     {
+                        // Create helper H variable for appropriate Zi expression
                         IloIntVar helperVar(environment, 0, chainHyperPeriod * 4);
 
                         model.add(helperVar <= (IloAbs(consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) + consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) );
-                        //model.add(helperVar >= 0);
-
-                      
-                        /*
-                        char name[38] = "helper_producer000_000consumer000_000";
-
-                        for (int k = 7; k < 38; k++)
-                        {
-                            name[k] = consumerProducerPairVariablesForConsumer[consumerProducerPairIndex].getName()[k - 7];
-                        }
-
-                        helperVar.setName(name);
-                        */
- 
                         
                         std::cout << helperVar << std::endl;
 
-
-                        //std::cout << " ULAZIMO ZA: " << consumerProducerPairVariablesForConsumer[consumerProducerPairIndex];
-                        
-                        // Helper variable that is equal to zero if producer and consumer are communicating, otherwise it is equal to 1
-                        
-                        //model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex] < 0, helperVar == 0));
-
-                        //model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int)1] < 0, helper.add((IloAbs(consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) + consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) / 2)));
-
-                        model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int)1] < 0, helperVar == (IloAbs(consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) + consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) ));
-                        model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int)1] >= 0, helperVar == 0));
-                        
-                        
-                        /*if(consumerProducerPairIndex == consumerProducerPairVariablesForConsumer.getSize() - 2)
-                        {
-                            model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int)1] > 0, helperVar == consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int)1]));
-                        }*/
-
-                        /*
-                        // Check if first is smallest or not
-                        if (consumerProducerPairIndex == 0)
-                        {
-                            std::cout << "FIRST NTIIIIIII ZAA" << std::endl;
-
-                            model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex] >= 0 && consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int) 1] < 0, helperVar == consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]));
-                            //model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex] >= 0 && consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int) 1] >= 0, helperVar == 0));
-
-                        }
-
-                        // Check if last is smallest
-                        if (consumerProducerPairIndex == consumerProducerPairVariablesForConsumer.getSize() - 1 )
-                        {
-                            std::cout << "LAST NTIIIIIII ZAA" << std::endl;
-                            model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex] >= 0, helperVar == consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]));
-                        }
-
-                        // Check for middle ones
-                        if (consumerProducerPairIndex > 1 && consumerProducerPairIndex < consumerProducerPairVariablesForConsumer.getSize() - 1)
-                        {
-     
-                            std::cout << "MIDDLE NTIIIIIII ZAA" << std::endl;
-
-                            model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex] >= 0 && consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int) 1] < 0, helperVar == consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]));
-
-                            //model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[consumerProducerPairIndex] >= 0 && consumerProducerPairVariablesForConsumer[consumerProducerPairIndex - (int) 1] >= 0 && consumerProducerPairVariablesForConsumer[consumerProducerPairIndex + (int) 1] >= 0, helperVar == 0));
-                        }
-                        */
+                        // If the following Zi is negative, this is the smallest Zi value, set Hi = Zi
+                        model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[(long long int) consumerProducerPairIndex + (long long int)1] < 0, helperVar == (IloAbs(consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) + consumerProducerPairVariablesForConsumer[consumerProducerPairIndex]) ));
+                        // If the following Zi is positive, this is still not the smallest Zi value, set Hi = 0
+                        model.add(IloIfThen(environment, consumerProducerPairVariablesForConsumer[(long long int) consumerProducerPairIndex + (long long int)1] >= 0, helperVar == 0));
 
                         helper.add(helperVar);
 
-                        
                     }
                     
                 }
-
-                
+    
             }
         }
 
     }
 
     std::cout << "Objective Function" << std::endl;
+
     objectiveFunction = IloSum(helper) / 2;
+
     std::cout << objectiveFunction << std::endl;
 
     // Multiobjective function
 
+        // if a maximum inter core delay is set
         if (maximumInterCoreDelay != -1)
         {
 
-            model.add(objectiveFunction >= 0);
-
-            //model.add(objectiveFunction <= maximumInterCoreDelay);
+            model.add(objectiveFunction <= maximumInterCoreDelay);
 
             IloObjective objective = IloMinimize(environment, objectiveFunction);
 
@@ -890,12 +613,14 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
         }
         else
         {
-            
+            /* if the response tiems should be minimized as well
+            a multi objective function is created
+            first the sum of helper variables is minimized
+            second among schedules with minimized helper variables
+            response time variables are minimized as well */
             if (minimizeResponseTimes)
             {
-
-                //model.add(objectiveFunction >= 560);
-
+                // The response times function for minimization
                 IloExpr responseTimes = IloSum(responseTimeDecisionVariables);
 
                 model.add(responseTimes >= 0);
@@ -916,82 +641,59 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
  
         }
 
-
-
         // Create the constraint programming problem
         IloCP cp(model);
 
-
-        IloSearchPhaseArray arrayOfPhases(environment);
-
-        IloSearchPhase phase1(environment, allPhasesOfInstances);
-
-        IloSearchPhase phase2(environment, instancesOnCore.at(0));
-
-        IloSearchPhase phase3(environment, instancesOnCore.at(1));
-
-        IloSearchPhase phase4(environment, helper);
-
-        //arrayOfPhases.add(phase4);
-        arrayOfPhases.add(phase3);
-        arrayOfPhases.add(phase3);
-
-
-        //cp.setSearchPhases(arrayOfPhases);
-
         cp.setParameter(IloCP::SearchType, IloCP::Auto);
 
-        //cp.setParameter(IloCP::RestartFailLimit, 300);
-        //cp.setParameter(IloCP::RestartGrowthFactor, 1.5);
-
-        //cp.setParameter(IloCP::FailureDirectedSearch, IloCP::On);
-
+        // allow cp optimizer more time to infer about the next solution
+        cp.setParameter(IloCP::DefaultInferenceLevel, IloCP::Extended);
 
         cp.setParameter(IloCP::Presolve, IloCP::On);
 
-        //cp.setParameter(IloCP::RelativeOptimalityTolerance, 0.000001);
-
-        cp.setParameter(IloCP::TimeLimit, 10);
+        cp.setParameter(IloCP::TimeLimit, timeLimit);
 
         cp.setParameter(IloCP::LogVerbosity, IloCP::Verbose);
 
-
-
-
-       
-        //Find numberOfSolutions solutions
-        //cp.setParameter(IloCP::SolutionLimit, numberOfSolutions);
-
         
-        // begin search
-
+        // Output in log file
         std::ofstream LogFile(logFile);
         cp.setOut(LogFile);
 
-        //cp.solve();
+        // Log tasks on both cores
 
-        //cp.out() << cp.solve();
+        for (int i = 0; i < taskSets.size(); i++)
+        {
+            cp.out() << "Tasks on core " << i << ": " << std::endl;
 
-        //cp.startNewSearch();
+            for (int j = 0; j < taskSets.at(i).getTasks().size(); j++)
+            {
+                cp.out() << taskSets.at(i).getTasks().at(j);
+            }
+        }
 
-       
-       //numberOfConstraints = cp.getInfo(IloCP::NumberOfConstraints);
+        // Log Hyperperiod
+        cp.out() << std::endl << "Total hyperperiod: " << hyperPeriod << std::endl << std::endl;
 
-        
-        
+        // Log Taskchains
 
-        //std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
-        
-        //print all solutions
+        for (int i = 0; i < taskChains.size(); i++)
+        {
+            cp.out() << "Chain " << i << ": " << std::endl;
+
+            cp.out() << taskChains.at(i);
+
+        }
+
+        // Initialize time
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
         std::chrono::steady_clock::time_point end;
-        
-        //while (cp.next()) 
-        //{
 
         if (cp.solve())
         {
+            std::cout << cp.getTime() << std::endl;
+
             end = std::chrono::steady_clock::now();
             if (cp.getStatus() == IloAlgorithm::Optimal)
             {
@@ -1032,7 +734,7 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
                     cp.out() << "************ Z_i: " << " ************" << std::endl;
                 }
 
-                cp.out() << consumerProducerPairVariablesForConsumerGlobal[i].getName() << ": " << cp.getValue(consumerProducerPairVariablesForConsumerGlobal[i]) << std::endl;
+                cp.out() << consumerProducerPairVariablesForConsumerGlobal[i] << ": " << cp.getValue(consumerProducerPairVariablesForConsumerGlobal[i]) << std::endl;
 
             }
 
@@ -1074,9 +776,11 @@ double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain>
         }
             
             
-            std::cout << "DONE!" << std::endl;
+        std::cout << "DONE!" << std::endl;
 
-            cp.end();
+        numberOfConstraints = cp.getInfo(IloCP::NumberOfConstraints);
+
+        cp.end();
 
         return std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
 }

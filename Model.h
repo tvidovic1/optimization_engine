@@ -34,7 +34,7 @@ void initializeEnviroment(void);
 char* createIntervalVariableName(int taskID, int numberOfInstance, char phase);
 
 // The function that creates CPLEX model based on task sets
-double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain> taskChains, int numberOfSolutions, std::string logFile, int & status,int maximumInterCoreDelay = -1, bool minimizeResponseTimes = false);
+double createAndSolveModel(std::vector<TaskSet> taskSets, std::vector<TaskChain> taskChains, int numberOfSolutions, std::string logFile, int& status, int & numberOfConstraints, int timeLimit = 60, int maximumInterCoreDelay = -1, bool minimizeResponseTimes = false);
 
 
 

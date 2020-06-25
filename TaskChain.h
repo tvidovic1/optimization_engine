@@ -3,6 +3,9 @@
 #include "Helper.h"
 #include <iostream>
 
+#define HYPERPERIOD_OF_EMPTY_TASK_CHAIN 0
+
+
 #pragma once
 class TaskChain
 {

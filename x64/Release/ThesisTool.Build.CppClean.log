@@ -1,5 +1,6 @@
 c:\users\tin\source\repos\thesistool\x64\release\vc142.pdb
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.obj
+c:\users\tin\source\repos\thesistool\x64\release\testgenerator.obj
 c:\users\tin\source\repos\thesistool\x64\release\taskset.obj
 c:\users\tin\source\repos\thesistool\x64\release\taskinstance.obj
 c:\users\tin\source\repos\thesistool\x64\release\taskchain.obj
@@ -7,7 +8,6 @@ c:\users\tin\source\repos\thesistool\x64\release\task.obj
 c:\users\tin\source\repos\thesistool\x64\release\model.obj
 c:\users\tin\source\repos\thesistool\x64\release\helper.obj
 c:\users\tin\source\repos\thesistool\x64\release\data.obj
-c:\users\tin\source\repos\thesistool\x64\release\testgenerator.obj
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.exe
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.pdb
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.ipdb
@@ -16,7 +16,6 @@ c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\cl.command.1.tl
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\cl.read.1.tlog
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\cl.write.1.tlog
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\link.command.1.tlog
-c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\link.delete.1.tlog
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\link.read.1.tlog
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\link.write.1.tlog
 c:\users\tin\source\repos\thesistool\x64\release\thesistool.tlog\thesistool.write.1u.tlog

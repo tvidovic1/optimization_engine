@@ -72,9 +72,8 @@ void Task::setPeriod(long long int t_period)
 
 void Task::setDeadline(long long int t_deadline)
 { 
-	// TODO: Replace with error
-	// In our model we assume that deadline is equal to period
-	if (t_deadline != period) return;
+
+	if (t_deadline != period) throw std::invalid_argument("Deadline must be equal to Period!");
 
 	deadline = t_deadline;
 
@@ -134,7 +133,7 @@ void Task::addSuccessor(Task successor)
 // OPERATORS
 std::ostream& operator<<(std::ostream& out, const Task& task)
 {
-	out << "tau " << task.task_id << ", WC Read: " << task.worst_case_read << ", WC Execute: " << task.worst_case_execute << ", WC Write: " <<task.worst_case_write << ", Period: " << task.period / 1000000000 << ", Core: " << task.core_assigned_to << ", Utilization: " <<  (double)((long long int)task.worst_case_read + (long long int)task.worst_case_execute + (long long int)task.worst_case_write)/ (long long int)task.period  <<std::endl;
+	out << "tau " << task.task_id << ", WC Read: " << task.worst_case_read << ", WC Execute: " << task.worst_case_execute << ", WC Write: " <<task.worst_case_write << ", Period: " << task.period << ", Core: " << task.core_assigned_to << ", Utilization: " <<  (double)((long long int)task.worst_case_read + (long long int)task.worst_case_execute + (long long int)task.worst_case_write)/ (long long int)task.period  <<std::endl;
 
 	return out;
 }

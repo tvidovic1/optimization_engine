@@ -41,15 +41,12 @@ long long int TaskSet::getHyperperiod() { return hyperperiod;  }
 std::vector<TaskInstance> TaskSet::getInstances() 
 {
 	std::vector<TaskInstance> instances;
-	//TODO: Replace with getTasks()
-	//TODO: try, catch
+
 	for (long long int i = 0; i < tasks.size(); i++)
 	{
-		//std::cout << "this->getHyperperiod() = " << this->getHyperperiod() << " tasks.at(i).getPeriod() = " << tasks.at(i).getPeriod() << std::endl;
 
 		for (long long int j = 1; j <= this->getHyperperiod()/tasks.at(i).getPeriod(); j++)
 		{
-			//std::cout << "Instanca: " << tasks.at(i) << " " << (j - 1) * tasks.at(i).getPeriod() << " " << j << std::endl;
 			instances.push_back(TaskInstance(tasks.at(i), (j-1)*tasks.at(i).getPeriod(), j));
 		}
 	}
@@ -64,12 +61,10 @@ std::vector<TaskInstance> TaskSet::getInstances()
 
 void TaskSet::addTask(Task t_task)
 {
-	// Check if task is of the appropriate core
-	// TODO: replace with error
-	if (t_task.getCoreAssignedTo() != core) return;
+
+	if (t_task.getCoreAssignedTo() != core) throw std::invalid_argument("Invalid core!");
 
 	//Check if task already added
-	//TODO: add errror
 	for (long long int i = 0; i < tasks.size(); i++)
 	{
 
@@ -114,11 +109,9 @@ long long int TaskSet::calculateHyperperiod()
 			if (periods.at(j) == period) isNewPeriodValue = false;
 		}
 
-		if (isNewPeriodValue || true) periods.push_back(period / 1000000);
+		if (isNewPeriodValue || true) periods.push_back(period);
 	}
-
-	//std::cout << "kalkulisem: " << findLeastCommonMultiple(periods) * 1000000;
-	return findLeastCommonMultiple(periods) * 1000000;
+	return findLeastCommonMultiple(periods);
 
 }
 
