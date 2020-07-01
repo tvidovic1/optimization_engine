@@ -153,6 +153,7 @@
     <ClCompile Include="Data.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Task.cpp" />
     <ClCompile Include="TaskChain.cpp" />
     <ClCompile Include="TaskInstance.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="Data.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="Task.h" />
     <ClInclude Include="TaskChain.h" />
     <ClInclude Include="TaskInstance.h" />

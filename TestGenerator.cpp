@@ -1,5 +1,7 @@
 #include "TestGenerator.h"
 
+int largestNumberOfInstances = 0;
+
 bool correctAmountOfTaskInstances(std::vector<TaskSet> taskSets, int n)
 {
 	int totalNumberOfTaskInstances = 0;
@@ -7,6 +9,13 @@ bool correctAmountOfTaskInstances(std::vector<TaskSet> taskSets, int n)
 	for (int i = 0; i < taskSets.size(); i++)
 	{
 		totalNumberOfTaskInstances += taskSets.at(i).getInstances().size();
+	}
+
+	//std::cout << "TOTAL NUMBER OF INSTANCES: " << totalNumberOfTaskInstances;
+
+	if (largestNumberOfInstances < totalNumberOfTaskInstances)
+	{
+		largestNumberOfInstances = totalNumberOfTaskInstances;
 	}
 
 	return totalNumberOfTaskInstances == n;
@@ -140,21 +149,24 @@ bool correctAmountOfCommunicatingInstances(std::vector<TaskSet> taskSets, std::v
 
 		}
 	}
-
+	
+	//std::cout << "TOTAL NUMBER OF COMMUNICATING INSTANCES: " << numberOfInstances;
 	return numberOfInstances == n;
 }
 
 
-std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>& chains, int numberOfTaskInstances, double totalUtilizationForCore0, double totalUtilizationForCore1, double percentageOfSystemConectedness, int numberOfCommunicatingProducerConsumerInstances)
+std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>& chains, int numberOfTasks, double totalUtilizationForCore0, double totalUtilizationForCore1, double percentageOfSystemConectedness, int numberOfCommunicatingProducerConsumerInstances)
 {
 
-	std::cout << "NEW TEST - chains: " << numberOfChains << " number of instances: " << numberOfTaskInstances << " number of communicating instances: " << numberOfCommunicatingProducerConsumerInstances << " utilizations: " << totalUtilizationForCore0 << " , " << totalUtilizationForCore1 << std::endl;
+	std::cout << "NEW TEST - chains: " << numberOfChains << " number of tasks: " << numberOfTasks << " number of communicating instances: " << numberOfCommunicatingProducerConsumerInstances << " utilizations: " << totalUtilizationForCore0 << " , " << totalUtilizationForCore1 << std::endl;
 	std::vector<TaskSet> taskSets;
+
+	largestNumberOfInstances = 0;
 
 	do
 	{
 
-		taskSets.clear();
+		int numberOfTasksInChains;
 
 		// Vector that holds numbers of tasks per activation pattern for each of the chains
 		std::vector<std::vector<int>> numberOfTasksPerActivationPatternPerChain;
@@ -162,88 +174,100 @@ std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>
 		// Vector that holds periods of tasks per activation pattern for each of the chain
 		std::vector<std::vector<int>> periodsOfTasksPerActivationPatternPerChain;
 
+		// For each of the chains (there are numberOfChains chains) randomly generate possible activation pattern
 
-		for (int chain = 0; chain < numberOfChains; chain++)
-		{
-			// For each of the chains (there are numberOfChains chains) randomly generate possible activation pattern
-
-			// Index of randomly generated number of activation pattern for current chain
-			int indexOfActivationPattern = roulleteWheelSelecetion(activationPatternsProbabilities);
-
-			std::vector<int> numbersOfTasksForCurrentChain;
-			numberOfTasksPerActivationPatternPerChain.push_back(numbersOfTasksForCurrentChain);
-
-			std::vector<int> periodsOfTasksForCurrentChain;
-			periodsOfTasksPerActivationPatternPerChain.push_back(periodsOfTasksForCurrentChain);
-
-			// For each of the activation patterns generate random corresponding number of tasks and periods of tasks
-			for (int activationPattern = 0; activationPattern < activationPatterns[indexOfActivationPattern]; activationPattern++)
-			{
-
-				numberOfTasksPerActivationPatternPerChain.at(chain).push_back(numberOfTasksPerActivationPattern.at(roulleteWheelSelecetion(numberOfTasksPerActivationPatternProbabilites)));
-
-				// If there is only one activation pattern or the current activation pattern is the first one, then a period for that activation pattern can be chosen from all possible tasks' periods
-				// else periods can only be chosen according to the matrix allowedConsumerPeriods
-
-				if (activationPatterns[indexOfActivationPattern] == 1 || activationPattern == 0)
-				{
-					periodsOfTasksPerActivationPatternPerChain.at(chain).push_back(tasksPeriods.at(roulleteWheelSelecetion(tasksPeriodsProbabilities)));
-				}
-
-				else
-				{
-					// Period of producing activation pattern
-					int periodOfProducingActivationPattern = periodsOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern - 1);
-
-					// Find index of the period of producing activation pattern in order to find allowed period of consuming activation pattern
-					int indexOfPeriodOfProducingActivationPattern = findIndex(tasksPeriods, periodOfProducingActivationPattern);
-
-					int periodOfConsumingActivationPatternPeriod;
-
-					int indexOfPeriodOfConsumingActivationPattern;
-
-					// Randomly generate periods of consuming activation pattern until the allowed period of consming activation pattern is obtained
-					do
-					{
-						// Randomly generate a potential period of consuming activation pattern
-						periodOfConsumingActivationPatternPeriod = tasksPeriods.at(roulleteWheelSelecetion(tasksPeriodsProbabilities));
-
-						// Find index of the potential consuming activation pattern
-						indexOfPeriodOfConsumingActivationPattern = findIndex(tasksPeriods, periodOfConsumingActivationPatternPeriod);
-
-					} while (isPeriodOfConsumingActivationPatternAllowed[indexOfPeriodOfProducingActivationPattern][indexOfPeriodOfConsumingActivationPattern] == false);
-
-					periodsOfTasksPerActivationPatternPerChain.at(chain).push_back(tasksPeriods.at(indexOfPeriodOfConsumingActivationPattern));
-				}
-			}
-		}
 
 		// Vector that holds periods of all tasks (tasks in chains + independent tasks)
 		std::vector<int> periodsOfTasks;
 
-		for (int chain = 0; chain < numberOfChains; chain++)
+		do
 		{
-			for (int activationPattern = 0; activationPattern < numberOfTasksPerActivationPatternPerChain.at(chain).size(); activationPattern++)
+
+			taskSets.clear();
+			numberOfTasksPerActivationPatternPerChain.clear();
+			periodsOfTasksPerActivationPatternPerChain.clear();
+			periodsOfTasks.clear();
+
+			for (int chain = 0; chain < numberOfChains; chain++)
 			{
-				for (int task = 0; task < numberOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern); task++)
+
+				// Index of randomly generated number of activation pattern for current chain
+				int indexOfActivationPattern = roulleteWheelSelecetion(activationPatternsProbabilities);
+
+				std::vector<int> numbersOfTasksForCurrentChain;
+				numberOfTasksPerActivationPatternPerChain.push_back(numbersOfTasksForCurrentChain);
+
+				std::vector<int> periodsOfTasksForCurrentChain;
+				periodsOfTasksPerActivationPatternPerChain.push_back(periodsOfTasksForCurrentChain);
+
+				// For each of the activation patterns generate random corresponding number of tasks and periods of tasks
+				for (int activationPattern = 0; activationPattern < activationPatterns[indexOfActivationPattern]; activationPattern++)
 				{
-					periodsOfTasks.push_back(periodsOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern));
+
+					numberOfTasksPerActivationPatternPerChain.at(chain).push_back(numberOfTasksPerActivationPattern.at(roulleteWheelSelecetion(numberOfTasksPerActivationPatternProbabilites)));
+
+					// If there is only one activation pattern or the current activation pattern is the first one, then a period for that activation pattern can be chosen from all possible tasks' periods
+					// else periods can only be chosen according to the matrix allowedConsumerPeriods
+
+					if (activationPatterns[indexOfActivationPattern] == 1 || activationPattern == 0)
+					{
+						periodsOfTasksPerActivationPatternPerChain.at(chain).push_back(tasksPeriods.at(roulleteWheelSelecetion(tasksPeriodsProbabilities)));
+					}
+
+					else
+					{
+						// Period of producing activation pattern
+						int periodOfProducingActivationPattern = periodsOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern - 1);
+
+						// Find index of the period of producing activation pattern in order to find allowed period of consuming activation pattern
+						int indexOfPeriodOfProducingActivationPattern = findIndex(tasksPeriods, periodOfProducingActivationPattern);
+
+						int periodOfConsumingActivationPatternPeriod;
+
+						int indexOfPeriodOfConsumingActivationPattern;
+
+						// Randomly generate periods of consuming activation pattern until the allowed period of consming activation pattern is obtained
+						do
+						{
+							// Randomly generate a potential period of consuming activation pattern
+							periodOfConsumingActivationPatternPeriod = tasksPeriods.at(roulleteWheelSelecetion(tasksPeriodsProbabilities));
+
+							// Find index of the potential consuming activation pattern
+							indexOfPeriodOfConsumingActivationPattern = findIndex(tasksPeriods, periodOfConsumingActivationPatternPeriod);
+
+						} while (isPeriodOfConsumingActivationPatternAllowed[indexOfPeriodOfProducingActivationPattern][indexOfPeriodOfConsumingActivationPattern] == false);
+
+						periodsOfTasksPerActivationPatternPerChain.at(chain).push_back(tasksPeriods.at(indexOfPeriodOfConsumingActivationPattern));
+					}
 				}
 			}
-		}
 
-		// A variable that holds the total number of tasks in chains
-		int numberOfTasksInChains = 0;
-
-		// Calculate total number of tasks in chains
-		for (int chain = 0; chain < numberOfChains; chain++)
-		{
-			for (int activationPattern = 0; activationPattern < numberOfTasksPerActivationPatternPerChain.at(chain).size(); activationPattern++)
+			for (int chain = 0; chain < numberOfChains; chain++)
 			{
-				numberOfTasksInChains += numberOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern);
+				for (int activationPattern = 0; activationPattern < numberOfTasksPerActivationPatternPerChain.at(chain).size(); activationPattern++)
+				{
+					for (int task = 0; task < numberOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern); task++)
+					{
+						periodsOfTasks.push_back(periodsOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern));
+					}
+				}
 			}
-		}
 
+			// A variable that holds the total number of tasks in chains
+			numberOfTasksInChains = 0;
+
+			// Calculate total number of tasks in chains
+			for (int chain = 0; chain < numberOfChains; chain++)
+			{
+				for (int activationPattern = 0; activationPattern < numberOfTasksPerActivationPatternPerChain.at(chain).size(); activationPattern++)
+				{
+					numberOfTasksInChains += numberOfTasksPerActivationPatternPerChain.at(chain).at(activationPattern);
+				}
+			}
+
+		} while (numberOfTasksInChains > numberOfTasks); // number of tasks in chains has to be smaller than the total number of tasks
+
+		
 		//Randomly generate the total number of tasks (task in chains + independent tasks) 
 		std::random_device rd;
 
@@ -251,10 +275,10 @@ std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>
 
 
 
-		std::uniform_int_distribution<> distribution(0, numberOfTasksInChains);
+		std::uniform_int_distribution<> distribution(0, numberOfTasksInChains * 2);
 
 		// Calculate the total number of independent tasks
-		int numberOfIndependentTasks = std::ceil(numberOfTasksInChains * (1 - percentageOfSystemConectedness) / percentageOfSystemConectedness);
+		int numberOfIndependentTasks = numberOfTasks - numberOfTasksInChains;
 
 		int totalNumberOfTasks = numberOfIndependentTasks + numberOfTasksInChains;
 
@@ -469,7 +493,9 @@ std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>
 		} while (!chainsValid(chains)); // check if the created chains are valid according to input parameters
 
 
-	} while (!correctAmountOfCommunicatingInstances(taskSets, chains, numberOfCommunicatingProducerConsumerInstances) || !correctAmountOfTaskInstances(taskSets, numberOfTaskInstances)); // check if the number of instances and communicating instances is correct
+	} while (!correctAmountOfCommunicatingInstances(taskSets, chains, numberOfCommunicatingProducerConsumerInstances)); // check if the number of instances and communicating instances is correct
+
+	std::cout << std::endl << "LARGEST NUMBER: " << largestNumberOfInstances << std::endl;
 
 	return taskSets;
 }

@@ -11,19 +11,66 @@
 #include "TaskChain.h"
 #include "Data.h"
 #include "TestGenerator.h"
+#include "Parser.h"
+
 
 int counter = 1;
 
 // TEST 1: Complexity of the optimization engine with respect to the number of task instances
 
+void help()
+{
+    for (int j = 0; j < 3; j++)
+    {
+        int infeasible = 0;
+        std::cout << "Chain " << j << std::endl;
+
+        for (int i = 1; i <= 1000; i++)
+        {
+
+            std::string cfilename = "C:\\Users\\Tin\\OneDrive\\Documents\\MDH\\Results\\LogFileSchedulabilityRatioVsUtilizationsChain";
+            cfilename += std::to_string(j);
+            cfilename += std::to_string(i);
+            cfilename += ".txt";
+            //std::cout << cfilename;
+            std::ifstream fileInput;
+            std::string line;
+            int offset;
+            const char* search = "Model has no solution"; // test variable to search in file
+            // open file to search
+            fileInput.open(cfilename.c_str());
+            if (fileInput.is_open()) {
+                while (!fileInput.eof()) {
+                    getline(fileInput, line);
+                    if ((offset = line.find(search, 0)) != std::string::npos) {
+                        infeasible++;
+                    }
+                }
+                fileInput.close();
+            }
+            else std::cout << "Unable to open file.";
+
+            if (i % 100 == 0)
+            {
+
+                std::cout << std::endl << "infeasible: " << infeasible;
+                infeasible = 0;
+            }
+        }
+    }
+
+    return;
+
+}
+
 void testConstraintsVsTaskInstances()
 {
-    std::vector<int> numberOfTaskInstances = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000 };
-    std::vector<int> numberOfChains = { 1, 2, 3, 4, 5 };
+    std::vector<int> numberOfTasks = { 15, 20, 25, 30, 35, 40, 45, 50, 55, 60 };
+    std::vector<int> numberOfChains = { 2, 3, 4 };
     std::vector<double> utilizationsForCores = { 0.5, 0.5 };
     int numberOfCommunicatingPairs = 32;
     double percentageOfConectedness = 0.7;
-    int numberOfTestCases = 2;
+    int numberOfTestCases = 200;
     int numberOfSolutions = 1;
     int maximumInterCoreDelay = -1;
     int status;
@@ -41,7 +88,7 @@ void testConstraintsVsTaskInstances()
 
     for (int i = 0; i < numberOfChains.size(); i++)
     {
-        for (int j = 0; j < numberOfTaskInstances.size(); j++)
+        for (int j = 0; j < numberOfTasks.size(); j++)
         {
             std::vector<int> numberOfConstraints;
             numberOfConstraintsPerNumberOfTaskInstancesPerNumberOfChains.at(i).push_back(numberOfConstraints);
@@ -61,13 +108,13 @@ void testConstraintsVsTaskInstances()
     {
         numberOfTest = 1;
 
-        for (int numberOfTaskInstance = 0; numberOfTaskInstance < numberOfTaskInstances.size(); numberOfTaskInstance)
+        for (int numberOfTaskInstance = 0; numberOfTaskInstance < numberOfTasks.size(); numberOfTaskInstance++)
         {
             for (int i = 0; i < numberOfTestCases; i++)
             {
                 chains.clear();
 
-                std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTaskInstances[numberOfTaskInstance], utilizationsForCores[0], utilizationsForCores[1], percentageOfConectedness, numberOfCommunicatingPairs);
+                std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTasks[numberOfTaskInstance], utilizationsForCores[0], utilizationsForCores[1], percentageOfConectedness, numberOfCommunicatingPairs);
 
                 std::string logFile1 = "LogFileConstVsInstancesChain";
                 std::string logFile2 = std::to_string(numberOfChain);
@@ -92,7 +139,7 @@ void testConstraintsVsTaskInstances()
     for (int numberOfChain = 0; numberOfChain < numberOfChains.size(); numberOfChain++)
     {
 
-        for (int numberOfInstance = 0; numberOfInstance < numberOfTaskInstances.size(); numberOfInstance++)
+        for (int numberOfInstance = 0; numberOfInstance < numberOfTasks.size(); numberOfInstance++)
         {
             double sum = 0.0;
 
@@ -113,9 +160,9 @@ void testConstraintsVsTaskInstances()
     {
         std::cout << "CHAIN: " << numberOfChain << std::endl;
 
-        for (int numberOfInstance = 0; numberOfInstance < numberOfTaskInstances.size(); numberOfInstance)
+        for (int numberOfInstance = 0; numberOfInstance < numberOfTasks.size(); numberOfInstance++)
         {
-            std::cout << "Number of task instances " << numberOfTaskInstances.at(numberOfInstance) << ": ";
+            std::cout << "Number of tasks " << numberOfTasks.at(numberOfInstance) << ": ";
             std::cout << avgNumberOfConstraintsPerNumberOfTaskInstancesPerChain.at(numberOfChain).at(numberOfInstance) << std::endl;
         }
              
@@ -131,16 +178,16 @@ void testConstraintsVsTaskInstances()
 
 void testConstraintsVsCommunicatingPairs()
 {
-    int numberOfTaskInstances = 500;
-    std::vector<int> numberOfChains = { 1, 2, 3, 4, 5 };
+    int numberOfTasks = 20;
+    std::vector<int> numberOfChains = { 2, 3, 4 };
     std::vector<double> utilizationsForCores = { 0.5, 0.5 };
-    std::vector<int> numberOfCommunicatingPairs = {0, 2, 4, 8, 16, 32, 64, 128};
-    double percentageOfConectedness = 0.7;
-    int numberOfTestCases = 100;
+    std::vector<int> numberOfCommunicatingPairs = { 0, 2, 4, 8, 16, 32, 64, 128 };
+    double percentageOfConectedness = 0.6;
+    int numberOfTestCases = 500;
     int numberOfSolutions = 1;
     int maximumInterCoreDelay = -1;
     int status;
-    int timeLimit = 600;
+    int timeLimit = 1;
     std::vector<TaskChain> chains;
 
     std::vector<std::vector<std::vector<int>>> numberOfConstraintsPerNumberOfCommunicatingPairsPerNumberOfChains;
@@ -174,13 +221,13 @@ void testConstraintsVsCommunicatingPairs()
     {
         numberOfTest = 1;
 
-        for (int numberOfCommunicatingPair = 0; numberOfCommunicatingPair < numberOfCommunicatingPairs.size(); numberOfCommunicatingPair)
+        for (int numberOfCommunicatingPair = 0; numberOfCommunicatingPair < numberOfCommunicatingPairs.size(); numberOfCommunicatingPair++)
         {
             for (int i = 0; i < numberOfTestCases; i++)
             {
                 chains.clear();
 
-                std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTaskInstances, utilizationsForCores[0], utilizationsForCores[1], percentageOfConectedness, numberOfCommunicatingPairs[numberOfCommunicatingPair]);
+                std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTasks, utilizationsForCores[0], utilizationsForCores[1], percentageOfConectedness, numberOfCommunicatingPairs[numberOfCommunicatingPair]);
 
                 std::string logFile1 = "LogFileConstVsPairsChain";
                 std::string logFile2 = std::to_string(numberOfChain);
@@ -226,7 +273,7 @@ void testConstraintsVsCommunicatingPairs()
     {
         std::cout << "CHAIN: " << numberOfChain << std::endl;
 
-        for (int numberOfCommunicatingPair = 0; numberOfCommunicatingPair < numberOfCommunicatingPairs.size(); numberOfCommunicatingPair)
+        for (int numberOfCommunicatingPair = 0; numberOfCommunicatingPair < numberOfCommunicatingPairs.size(); numberOfCommunicatingPair++)
         {
             std::cout << "Number of communicating producer-consumer pairs " << numberOfCommunicatingPairs.at(numberOfCommunicatingPair) << ": ";
             std::cout << avgNumberOfConstraintsPerNumberOfCommunicatingPairsPerChain.at(numberOfChain).at(numberOfCommunicatingPair) << std::endl;
@@ -357,16 +404,16 @@ void testSolvingTimeVsTaskInstances()
 
 void testSolvingTimeVsCommunicatingPairs()
 {
-    int numberOfTaskInstances = 300;
-    std::vector<int> numberOfChains = { 2, 3};
+    int numberOfTasks = 20;
+    std::vector<int> numberOfChains = { 2, 3, 4};
     std::vector<double> utilizationsForCores = { 0.5, 0.5 };
     std::vector<int> numberOfCommunicatingPairs = { 0, 2, 4, 8, 16, 32, 64, 128 };
-    double percentageOfConectedness = 0.7;
-    int numberOfTestCases = 2;
+    double percentageOfConectedness = 0.6;
+    int numberOfTestCases = 100;
     int numberOfSolutions = 1;
     int maximumInterCoreDelay = -1;
     int status;
-    int timeLimit = 1;
+    int timeLimit = 600;
     std::vector<TaskChain> chains;
 
     std::vector<std::vector<std::vector<int>>> solvingTimePerNumberOfCommunicatingPairsPerNumberOfChains;
@@ -406,7 +453,7 @@ void testSolvingTimeVsCommunicatingPairs()
             {
                 chains.clear();
 
-                std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTaskInstances, utilizationsForCores[0], utilizationsForCores[1], percentageOfConectedness, numberOfCommunicatingPairs[numberOfCommunicatingPair]);
+                std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTasks, utilizationsForCores[0], utilizationsForCores[1], percentageOfConectedness, numberOfCommunicatingPairs[numberOfCommunicatingPair]);
 
                 std::string logFile1 = "LogFileSolvingTimeVsPairsChain";
                 std::string logFile2 = std::to_string(numberOfChain);
@@ -420,7 +467,7 @@ void testSolvingTimeVsCommunicatingPairs()
                 int totalNumberOfConstraints;
 
                 double solvingTime = createAndSolveModel(mytaskSets, chains, numberOfSolutions, logFile1 + logFile2 + logFile3 + logFile4, status, totalNumberOfConstraints, timeLimit, maximumInterCoreDelay);
-
+                std::cout << "TU SMO";
                 solvingTimePerNumberOfCommunicatingPairsPerNumberOfChains.at(numberOfChain).at(numberOfCommunicatingPair).push_back(solvingTime);
 
             }
@@ -469,16 +516,16 @@ void testSolvingTimeVsCommunicatingPairs()
 
 void testSchedulabilityRatioVsUtilizations()
 {
-    int numberOfTaskInstances = 120;
+    int numberOfTaskInstances = 30;
     std::vector<int> numberOfChains = { 2, 3, 4};
-    std::vector<std::vector<double>> utilizationsForCores = { {0.2, 0.2}, {0.2, 0.4}, { 0.2, 0.6 }, { 0.2, 0.8 }, { 0.4, 0.4 }, { 0.4, 0.6 }, { 0.4, 0.8 }, { 0.6, 0.6 }, { 0.6, 0.8 }, { 0.8, 0.8 } };
-    int numberOfCommunicatingPairs = 8;
+    std::vector<std::vector<double>> utilizationsForCores = { { 0.2, 0.1 }, {0.2, 0.2}, {0.2, 0.3}, { 0.2, 0.4 }, { 0.2, 0.5 }, { 0.2, 0.6 }, { 0.2, 0.7 }, { 0.2, 0.8 }, { 0.2, 0.9 }};
+    int numberOfCommunicatingPairs = 16;
     double percentageOfConectedness = 0.7;
-    int numberOfTestCases = 100;
+    int numberOfTestCases = 200;
     int numberOfSolutions = 1;
     int maximumInterCoreDelay = -1;
     int status;
-    int timeLimit = 600;
+    int timeLimit = 120;
     std::vector<TaskChain> chains;
 
 
@@ -530,7 +577,7 @@ void testSchedulabilityRatioVsUtilizations()
 
                 std::vector<TaskSet> mytaskSets = generateTestCase(numberOfChains[numberOfChain], chains, numberOfTaskInstances, utilizationsForCores.at(utilizationPair).at(0), utilizationsForCores.at(utilizationPair).at(1), percentageOfConectedness, numberOfCommunicatingPairs);
 
-                std::string logFile1 = "LogFileSchedulabilityRatioVsUtilizationsChain";
+                std::string logFile1 = "LogFileSchedulabilityRatioVsUtilizations02Chain";
                 std::string logFile2 = std::to_string(numberOfChain);
                 std::string logFile3 = std::to_string(numberOfTest);
                 std::string logFile4 = ".txt";
@@ -543,6 +590,8 @@ void testSchedulabilityRatioVsUtilizations()
                 int totalNumberOfConstraints;
 
                 createAndSolveModel(mytaskSets, chains, numberOfSolutions, logFile1 + logFile2 + logFile3 + logFile4, status, totalNumberOfConstraints, timeLimit, maximumInterCoreDelay);
+
+                std::cout << std::endl << status << std::endl;
 
                 if (status == 0)
                 {
@@ -559,10 +608,12 @@ void testSchedulabilityRatioVsUtilizations()
 
             }
 
+
             numberOfOptimizedPerUtilizationsPerChain.at(numberOfChain).push_back(numberOfOptimizedSchedulesPerUtilizationPair);
             numberOfTightenedPerUtilizationsPerChain.at(numberOfChain).push_back(numberOfTightenedSchedulesPerUtilizationPair);
             numberOfInfeasiblePerUtilizationsPerChain.at(numberOfChain).push_back(numberOfInfeasibleSchedulesPerUtilizationPair);
         }
+
     }
 
    
@@ -570,7 +621,8 @@ void testSchedulabilityRatioVsUtilizations()
     {
         for (int utilizationPair = 0; utilizationPair < utilizationsForCores.size(); utilizationPair++)
         {
-            schedulabilityRatioPerUtilizationsPerChain.at(numberOfChain).push_back((numberOfTestCases - numberOfInfeasiblePerUtilizationsPerChain.at(numberOfChain).at(utilizationPair)) / numberOfTestCases);
+            //std::cout << "CHAIN: " << numberOfChain << " UTILIZATION PAIR: " << utilizationPair << "numberOfInfeasible: " << numberOfInfeasiblePerUtilizationsPerChain.at(numberOfChain).at(utilizationPair);
+            schedulabilityRatioPerUtilizationsPerChain.at(numberOfChain).push_back( (double) (numberOfTestCases - numberOfInfeasiblePerUtilizationsPerChain.at(numberOfChain).at(utilizationPair) ) / numberOfTestCases);
         }
     }
 
@@ -582,8 +634,8 @@ void testSchedulabilityRatioVsUtilizations()
 
         for (int utilizationPair = 0; utilizationPair < utilizationsForCores.size(); utilizationPair++)
         {
-            std::cout << "Utilization Pair " << utilizationsForCores.at(utilizationPair).at(0) << " " << utilizationsForCores.at(utilizationPair).at(0) << ": ";
-            schedulabilityRatioPerUtilizationsPerChain.at(numberOfChain).push_back((numberOfTestCases - numberOfInfeasiblePerUtilizationsPerChain.at(numberOfChain).at(utilizationPair)) / numberOfTestCases);
+            std::cout << "Utilization Pair " << utilizationsForCores.at(utilizationPair).at(0) << " " << utilizationsForCores.at(utilizationPair).at(1) << ": ";
+            //schedulabilityRatioPerUtilizationsPerChain.at(numberOfChain).push_back((numberOfTestCases - numberOfInfeasiblePerUtilizationsPerChain.at(numberOfChain).at(utilizationPair)) / numberOfTestCases);
             std::cout << schedulabilityRatioPerUtilizationsPerChain.at(numberOfChain).at(utilizationPair) << std::endl;
         }
     }
@@ -1180,7 +1232,23 @@ int main(int, const char* []) {
 
     try
     {
-        testSolvingTimeVsCommunicatingPairs();
+
+        std::vector<const char*> paths;
+
+        paths.push_back("C:\\Users\\Tin\\Downloads\\schedule_Core1 (1).rubusTrace");
+
+        paths.push_back("C:\\Users\\Tin\\Downloads\\schedule_Core2 (1).rubusTrace");
+
+        std::vector<TaskChain> taskChains;
+
+        taskChains.clear();
+
+        int status;
+
+        int maximumInterCoreDelay = -1;
+
+        createAndSolveModel(readInput(paths), taskChains, 1, "parser.txt", status, maximumInterCoreDelay, true);
+        
     }
     catch (const std::exception & e)
     {

@@ -55,7 +55,7 @@
 #define labelSizesProbabilities std::vector<double> {0.35, 0.49, 0.13, 0.008, 0.013, 0.005, 0.002, 0.002}
 
 // A function that randomly generates Test Case 
-std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>& chains, int numberOfTaskInstances, double totalUtilizationForCore0, double totalUtilizationForCore1, double percentageOfSystemConectedness, int numberOfCommunicatingProducerConsumerInstances = -1);
+std::vector<TaskSet> generateTestCase(int numberOfChains, std::vector<TaskChain>& chains, int numberOfTasks, double totalUtilizationForCore0, double totalUtilizationForCore1, double percentageOfSystemConectedness, int numberOfCommunicatingProducerConsumerInstances = -1);
 
 // A function that checks if exactly n task instances is created
 bool correctAmountOfTaskInstances(std::vector<TaskSet> taskSets, int n);

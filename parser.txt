@@ -1,0 +1,106 @@
+Tasks on core 0: 
+tau 2, WC Read: 2000, WC Execute: 478963, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00482963
+tau 3, WC Read: 2000, WC Execute: 114908, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00118908
+tau 4, WC Read: 2000, WC Execute: 140083, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00144083
+tau 5, WC Read: 2000, WC Execute: 569933, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00573933
+tau 6, WC Read: 2000, WC Execute: 840173, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00844173
+tau 7, WC Read: 2000, WC Execute: 2266085, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.0227009
+tau 8, WC Read: 2000, WC Execute: 270056, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00274056
+tau 9, WC Read: 2000, WC Execute: 82936, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00086936
+tau 10, WC Read: 2000, WC Execute: 2954096, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.029581
+tau 11, WC Read: 2000, WC Execute: 2954096, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.029581
+tau 12, WC Read: 2000, WC Execute: 674016, WC Write: 2000, Period: 100000000, Core: 0, Utilization: 0.00678016
+Tasks on core 1: 
+tau 2, WC Read: 2000, WC Execute: 2889045, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.0289304
+tau 3, WC Read: 2000, WC Execute: 2458153, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.0246215
+tau 4, WC Read: 2000, WC Execute: 1648180, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.0165218
+tau 5, WC Read: 2000, WC Execute: 19638355, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.196424
+tau 6, WC Read: 2000, WC Execute: 165963, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.00169963
+tau 7, WC Read: 2000, WC Execute: 2889045, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.0289304
+tau 8, WC Read: 2000, WC Execute: 3185176, WC Write: 2000, Period: 100000000, Core: 1, Utilization: 0.0318918
+
+Total hyperperiod: 100000000
+
+ ! -------------------------------------------------- CP Optimizer 12.10.0.0 --
+ ! Minimization problem - 75 variables, 76 constraints
+ ! Presolve      : 36 extractables eliminated
+ ! TimeLimit            = 1
+ ! DefaultInferenceLevel = Extended
+ ! LogVerbosity         = Verbose
+ ! Initial process time : 0.00s (0.00s extraction + 0.00s propagation)
+ !  . Log search space  : 555.3 (before), 555.3 (after)
+ !  . Memory usage      : 507.8 kB (before), 507.8 kB (after)
+ ! Using parallel search with 12 workers.
+ ! ----------------------------------------------------------------------------
+ !          Best Branches  Non-fixed    W       Branch decision
+                        0         75                 -
+ + New bound is 0
+ ! Using iterative diving.
+ *             0       55  0.02s        1      (gap is 0.00%)
+ ! ----------------------------------------------------------------------------
+ ! Search completed, 1 solution found.
+ ! Best objective         : 0 (optimal - effective tol. is 0)
+ ! Best bound             : 0
+ ! ----------------------------------------------------------------------------
+ ! Number of branches     : 177619
+ ! Number of fails        : 2757
+ ! Total memory usage     : 6.6 MB (6.5 MB CP Optimizer + 0.1 MB Concert)
+ ! Time spent in solve    : 0.05s (0.04s engine + 0.00s extraction)
+ ! Search speed (br. / s) : 3779127.7
+ ! ----------------------------------------------------------------------------
+************ CORE 0 ************
+tau 0002 0001 R[1: 0 -- 2000 --> 2000]
+tau 0002 0001 E[1: 2000 -- 478963 --> 480963]
+tau 0002 0001 W[1: 480963 -- 2000 --> 482963]
+tau 0003 0001 R[1: 482963 -- 2000 --> 484963]
+tau 0003 0001 E[1: 484963 -- 114908 --> 599871]
+tau 0003 0001 W[1: 599871 -- 2000 --> 601871]
+tau 0004 0001 R[1: 601871 -- 2000 --> 603871]
+tau 0004 0001 E[1: 603871 -- 140083 --> 743954]
+tau 0004 0001 W[1: 743954 -- 2000 --> 745954]
+tau 0005 0001 R[1: 745954 -- 2000 --> 747954]
+tau 0005 0001 E[1: 747954 -- 569933 --> 1317887]
+tau 0005 0001 W[1: 1317887 -- 2000 --> 1319887]
+tau 0006 0001 R[1: 1319887 -- 2000 --> 1321887]
+tau 0006 0001 E[1: 1321887 -- 840173 --> 2162060]
+tau 0006 0001 W[1: 2162060 -- 2000 --> 2164060]
+tau 0007 0001 R[1: 2164060 -- 2000 --> 2166060]
+tau 0007 0001 E[1: 2166060 -- 2266085 --> 4432145]
+tau 0007 0001 W[1: 4432145 -- 2000 --> 4434145]
+tau 0008 0001 R[1: 4434145 -- 2000 --> 4436145]
+tau 0008 0001 E[1: 4436145 -- 270056 --> 4706201]
+tau 0008 0001 W[1: 4706201 -- 2000 --> 4708201]
+tau 0009 0001 R[1: 4708201 -- 2000 --> 4710201]
+tau 0009 0001 E[1: 4710201 -- 82936 --> 4793137]
+tau 0009 0001 W[1: 4793137 -- 2000 --> 4795137]
+tau 0010 0001 R[1: 4795137 -- 2000 --> 4797137]
+tau 0010 0001 E[1: 4797137 -- 2954096 --> 7751233]
+tau 0010 0001 W[1: 7751233 -- 2000 --> 7753233]
+tau 0011 0001 R[1: 7753233 -- 2000 --> 7755233]
+tau 0011 0001 E[1: 7755233 -- 2954096 --> 10709329]
+tau 0011 0001 W[1: 10709329 -- 2000 --> 10711329]
+tau 0012 0001 R[1: 10711329 -- 2000 --> 10713329]
+tau 0012 0001 E[1: 10713329 -- 674016 --> 11387345]
+tau 0012 0001 W[1: 11387345 -- 2000 --> 11389345]
+************ CORE 1 ************
+tau 0002 0001 R[1: 2000 -- 2000 --> 4000]
+tau 0002 0001 E[1: 4000 -- 2889045 --> 2893045]
+tau 0002 0001 W[1: 2893045 -- 2000 --> 2895045]
+tau 0003 0001 R[1: 2895045 -- 2000 --> 2897045]
+tau 0003 0001 E[1: 2897045 -- 2458153 --> 5355198]
+tau 0003 0001 W[1: 5355198 -- 2000 --> 5357198]
+tau 0004 0001 R[1: 5357198 -- 2000 --> 5359198]
+tau 0004 0001 E[1: 5359198 -- 1648180 --> 7007378]
+tau 0004 0001 W[1: 7007378 -- 2000 --> 7009378]
+tau 0005 0001 R[1: 7009378 -- 2000 --> 7011378]
+tau 0005 0001 E[1: 7011378 -- 19638355 --> 26649733]
+tau 0005 0001 W[1: 26649733 -- 2000 --> 26651733]
+tau 0006 0001 R[1: 26651733 -- 2000 --> 26653733]
+tau 0006 0001 E[1: 26653733 -- 165963 --> 26819696]
+tau 0006 0001 W[1: 26819696 -- 2000 --> 26821696]
+tau 0007 0001 R[1: 26821696 -- 2000 --> 26823696]
+tau 0007 0001 E[1: 26823696 -- 2889045 --> 29712741]
+tau 0007 0001 W[1: 29712741 -- 2000 --> 29714741]
+tau 0008 0001 R[1: 29714741 -- 2000 --> 29716741]
+tau 0008 0001 E[1: 29716741 -- 3185176 --> 32901917]
+tau 0008 0001 W[1: 32901917 -- 2000 --> 32903917]
