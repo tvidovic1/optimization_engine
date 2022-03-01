@@ -517,15 +517,15 @@ void testSolvingTimeVsCommunicatingPairs()
 void testSchedulabilityRatioVsUtilizations()
 {
     int numberOfTaskInstances = 30;
-    std::vector<int> numberOfChains = { 2, 3, 4};
-    std::vector<std::vector<double>> utilizationsForCores = { { 0.2, 0.1 }, {0.2, 0.2}, {0.2, 0.3}, { 0.2, 0.4 }, { 0.2, 0.5 }, { 0.2, 0.6 }, { 0.2, 0.7 }, { 0.2, 0.8 }, { 0.2, 0.9 }};
+    std::vector<int> numberOfChains = { 3};
+    std::vector<std::vector<double>> utilizationsForCores = { { 0.9, 0.9 }};
     int numberOfCommunicatingPairs = 16;
     double percentageOfConectedness = 0.7;
-    int numberOfTestCases = 200;
+    int numberOfTestCases = 30;
     int numberOfSolutions = 1;
     int maximumInterCoreDelay = -1;
     int status;
-    int timeLimit = 120;
+    int timeLimit = 600;
     std::vector<TaskChain> chains;
 
 
@@ -1233,21 +1233,7 @@ int main(int, const char* []) {
     try
     {
 
-        std::vector<const char*> paths;
-
-        paths.push_back("C:\\Users\\Tin\\Downloads\\schedule_Core1 (1).rubusTrace");
-
-        paths.push_back("C:\\Users\\Tin\\Downloads\\schedule_Core2 (1).rubusTrace");
-
-        std::vector<TaskChain> taskChains;
-
-        taskChains.clear();
-
-        int status;
-
-        int maximumInterCoreDelay = -1;
-
-        createAndSolveModel(readInput(paths), taskChains, 1, "parser.txt", status, maximumInterCoreDelay, true);
+        testSchedulabilityRatioVsUtilizations()
         
     }
     catch (const std::exception & e)

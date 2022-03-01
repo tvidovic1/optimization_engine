@@ -1,0 +1,73 @@
+﻿  Data.cpp
+  Helper.cpp
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(172,32): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(174,41): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(237,16): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(242,16): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(312,20): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(346,44): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(346,52): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(457,16): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(461,53): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(463,38): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(463,79): warning C4244: 'argument': conversion from '_Ty' to 'const unsigned __int64', possible loss of data
+          with
+          [
+              _Ty=double
+          ]
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(470,53): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(472,42): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(477,53): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(484,53): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(491,50): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(493,24): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(512,42): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Helper.cpp(514,16): warning C4244: 'argument': conversion from 'double' to 'const unsigned __int64', possible loss of data
+  Model.cpp
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\Model.h(1,10): fatal error C1083: Cannot open include file: 'ilcp/cp.h': No such file or directory
+  Parser.cpp
+  Task.cpp
+  TaskChain.cpp
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskChain.cpp(47,36): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskChain.cpp(62,36): warning C4018: '<': signed/unsigned mismatch
+  TaskInstance.cpp
+  TaskSet.cpp
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskSet.cpp(45,30): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskSet.cpp(68,30): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskSet.cpp(83,30): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskSet.cpp(101,30): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskSet.cpp(106,31): warning C4018: '<': signed/unsigned mismatch
+  TestGenerator.cpp
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(11,69): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(35,15): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(48,82): warning C4244: 'argument': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(53,78): warning C4244: 'argument': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(386,82): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=__int64
+          ]
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(396,98): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=int
+          ]
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(399,117): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=__int64
+          ]
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(409,98): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=int
+          ]
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TestGenerator.cpp(412,119): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=__int64
+          ]
+  ThesisTool.cpp
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\ThesisTool.cpp(1,10): fatal error C1083: Cannot open include file: 'ilcp/cp.h': No such file or directory
+  Generating Code...
+C:\Users\Tin\VisualStudio projects\Optimization\optimization_engine\TaskChain.cpp(69): error C4716: 'operator<<': must return a value
